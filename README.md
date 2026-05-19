@@ -24,8 +24,8 @@ written in C# WPF (.NET 8).
 
 ---
 
-## 📦 What's inside
-<img width="56" height="56" alt="image" src="https://github.com/user-attachments/assets/b9abbba7-79a0-4003-8d9c-73037b3be02c" />
+## What's inside
+<img width="44" height="44" alt="image" src="https://github.com/user-attachments/assets/b9abbba7-79a0-4003-8d9c-73037b3be02c" />
 
 ```
 BearNest/
@@ -47,8 +47,9 @@ BearNest/
 ```
 
 ---
+<img width="44" height="44" alt="image" src="https://github.com/user-attachments/assets/b9abbba7-79a0-4003-8d9c-73037b3be02c" />
 
-## 🚀 Quick Start
+##  Quick Start
 
 1. Download the latest release archive
 2. Extract anywhere
@@ -60,8 +61,9 @@ BearNest/
 No installation required. No admin rights for proxy mode.
 
 ---
+<img width="44" height="44" alt="image" src="https://github.com/user-attachments/assets/b9abbba7-79a0-4003-8d9c-73037b3be02c" />
 
-## 🔌 Supported Protocols
+## Supported Protocols
 
 Anything xray-core supports:
 
@@ -75,7 +77,7 @@ Subscription formats: **Clash YAML**, **base64 URI list**
 ---
 <img width="56" height="56" alt="image" src="https://github.com/user-attachments/assets/b9abbba7-79a0-4003-8d9c-73037b3be02c" />
 
-## 🎨 Themes
+## Themes
 
 | Dark | Light | Nord | Bear |
 |------|-------|------|------|
@@ -84,8 +86,9 @@ Subscription formats: **Clash YAML**, **base64 URI list**
 Theme editor lets you customize every color with RGB sliders and save as `.xaml` file.
 
 ---
+<img width="44" height="44" alt="image" src="https://github.com/user-attachments/assets/b9abbba7-79a0-4003-8d9c-73037b3be02c" />
 
-## 🛠 Built With
+##  Built With
 
 - **C# / .NET 8 / WPF** — UI
 - **xray-core** — proxy engine
@@ -93,6 +96,7 @@ Theme editor lets you customize every color with RGB sliders and save as `.xaml`
 - **WinForms NotifyIcon** — system tray
 
 ---
+<img width="44" height="44" alt="image" src="https://github.com/user-attachments/assets/b9abbba7-79a0-4003-8d9c-73037b3be02c" />
 
 ## ⚠️ Requirements
 
@@ -101,10 +105,14 @@ Theme editor lets you customize every color with RGB sliders and save as `.xaml`
 - A working subscription URL (Clash YAML format)
 
 ---
+<img width="44" height="44" alt="image" src="https://github.com/user-attachments/assets/b9abbba7-79a0-4003-8d9c-73037b3be02c" />
 
 ## 🌐 Language
 
-UI language: English / Russian  
+UI language: English / Russian 
+
+
+<img width="44" height="44" alt="image" src="https://github.com/user-attachments/assets/b9abbba7-79a0-4003-8d9c-73037b3be02c" />
 
 ## 📋 Roadmap
 
@@ -114,6 +122,7 @@ UI language: English / Russian
 - [ ] Speed test per server
 
 ---
+<img width="44" height="44" alt="image" src="https://github.com/user-attachments/assets/b9abbba7-79a0-4003-8d9c-73037b3be02c" />
 
 ## 📄 License
 
