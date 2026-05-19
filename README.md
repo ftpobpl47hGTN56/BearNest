@@ -102,6 +102,10 @@ Theme editor lets you customize every color with RGB sliders and save as `.xaml`
 
 ---
 
+## 🌐 Language
+
+UI language: English / Russian  
+
 ## 📋 Roadmap
 
 - [ ] TUN mode (full traffic capture, like Happ)
