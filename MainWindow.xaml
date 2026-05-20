@@ -1,0 +1,441 @@
+﻿<Window x:Class="VpnClient.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="BearNest" Height="640" Width="740"
+        MinWidth="100" MinHeight="200"
+        Background="Transparent"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        ResizeMode="CanResizeWithGrip">
+    <Window.Resources>
+        <Style x:Key="WinBtn" TargetType="Button" BasedOn="{StaticResource BtnNormal}"/>
+    </Window.Resources>
+
+    <Window.Style>
+        <Style TargetType="Window">
+            <Setter Property="shell:WindowChrome.WindowChrome">
+                <Setter.Value>
+                    <shell:WindowChrome
+                    ResizeBorderThickness="6"
+                    CaptionHeight="0"
+                    GlassFrameThickness="0"
+                    UseAeroCaptionButtons="False"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Style>
+   <Border Background="{DynamicResource BrushBackground}"
+    BorderBrush="{DynamicResource BrushAccent}"
+    BorderThickness="1.5"
+    CornerRadius="12">
+    <Grid>
+        <Grid Margin="22,20,18,20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <!-- Кастомный заголовок -->
+            <Grid Grid.Column="0"
+                  MouseLeftButtonDown="TitleBar_MouseDown"
+                  shell:WindowChrome.IsHitTestVisibleInChrome="True"
+                  Background="Transparent">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <Grid Grid.Column="0"
+          MouseLeftButtonDown="TitleBar_MouseDown"
+          shell:WindowChrome.IsHitTestVisibleInChrome="True"
+          Background="Transparent">
+                        <TextBlock Text="🐻 BearNest"
+                   Foreground="{DynamicResource BrushText}"
+                   FontSize="14" FontWeight="Bold"
+                   VerticalAlignment="Center"/>
+                    </Grid>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Content="─"
+                Click="BtnMinimize_Click"
+                Width="32" Height="26"
+                Style="{StaticResource BtnNormal}"
+                Margin="0,0,4,0"
+                shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
+                    <Button Content="✕"
+                Click="BtnClose_Click"
+                Width="32" Height="26"
+                Background="{DynamicResource BrushButtonStop}"
+                Foreground="{DynamicResource BrushButtonFg}"
+                Style="{StaticResource BtnAccent}"
+                shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
+                </StackPanel>
+            </Grid>
+            <!-- Строка статуса -->
+            <Grid Grid.Row="1" Margin="0,0,0,5">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Статус подключения + таймер -->
+                <Grid Grid.Row="0" Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="11.991"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock x:Name="StatusText"
+               Text="{DynamicResource StatusStopped}" 
+                   Foreground="{DynamicResource BrushDisconnected}"
+                   FontSize="{DynamicResource FontSizeLarge}"
+                   FontWeight="Bold"
+                   VerticalAlignment="Center" HorizontalAlignment="Left" Width="697" RenderTransformOrigin="0.508,0.419" Grid.ColumnSpan="3"/>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Grid.ColumnSpan="2">
+                        <TextBlock x:Name="TrafficText"
+                       Text=""
+                       Foreground="{DynamicResource BrushAccent}"
+                       FontSize="{DynamicResource FontSizeSmall}"
+                       FontFamily="Consolas"
+                       VerticalAlignment="Center"
+                       Margin="0,0,15,0"/>
+                        <TextBlock x:Name="TimerText"
+                       Text=""
+                       Foreground="{DynamicResource BrushConnected}"
+                       FontSize="{DynamicResource FontSizeNormal}"
+                       FontFamily="Consolas"
+                       FontWeight="Bold"
+                       VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Статус подписки -->
+                <Border Grid.Row="1"
+                    x:Name="SubInfoPanel"
+                    Background="{DynamicResource BrushSurface}"
+                    BorderBrush="{DynamicResource BrushBorder}"
+                    BorderThickness="1"
+                    CornerRadius="6"
+                    Padding="12,8"
+                    Visibility="Collapsed">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Название подписки -->
+                        <StackPanel Grid.Column="0" Orientation="Horizontal">
+                            <TextBlock Text="📡 "
+                           FontSize="13"
+                           VerticalAlignment="Center"/>
+                            <TextBlock x:Name="SubTitleText"
+                           Text="—"
+                           Foreground="{DynamicResource BrushText}"
+                           FontSize="13" FontWeight="Bold"
+                           VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <!-- Трафик -->
+                        <StackPanel Grid.Column="1" Orientation="Horizontal"
+                        Margin="15,0">
+                            <TextBlock Text="↑↓ "
+                           Foreground="{DynamicResource BrushTextMuted}"
+                           FontSize="12"
+                           VerticalAlignment="Center"/>
+                            <TextBlock x:Name="SubTrafficText"
+                           Text="—"
+                           Foreground="{DynamicResource BrushAccent}"
+                           FontSize="12" FontFamily="Consolas"
+                           VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <!-- Срок -->
+                        <StackPanel Grid.Column="2" Orientation="Horizontal">
+                            <TextBlock Text="⏰ "
+                           Foreground="{DynamicResource BrushTextMuted}"
+                           FontSize="12"
+                           VerticalAlignment="Center"/>
+                            <TextBlock x:Name="SubExpireText"
+                           Text="—"
+                           FontSize="12"
+                           VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                    
+                </Border>
+            </Grid>
+
+            <!-- Поле подписки -->
+            <Grid Grid.Row="2" Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="130"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBox x:Name="SubUrlBox"
+                     Grid.Column="0"
+                     Style="{StaticResource InputStyle}"
+                     Margin="0,0,10,0"/>
+
+                <Button x:Name="BtnLoadSub"
+                 Content="{DynamicResource BtnLoad}"
+                    Grid.Column="1" 
+                    Click="BtnLoadSub_Click"
+                    Height="36"
+                    Style="{StaticResource BtnAccent}"
+                    Background="{DynamicResource BrushButtonLoad}"/>
+            </Grid>
+
+            <!-- Кнопки управления -->
+            <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,0,0,10">
+                <Button x:Name="BtnStart"
+                    Content="{DynamicResource BtnConnect}" 
+                    Click="BtnStart_Click"
+                    Width="150" Height="40"
+                    Style="{StaticResource BtnAccent}"
+                    Background="{DynamicResource BrushButtonConnect}"
+                    Margin="0,0,10,0"/>
+                         <Button x:Name="BtnSwitch"
+                            Content="{DynamicResource BtnSwitch}"
+                            Click="BtnSwitch_Click"
+                            Width="140" Height="40"
+                            Style="{StaticResource BtnAccent}"
+                            Background="{DynamicResource BrushButtonLoad}"
+                            IsEnabled="False"
+                            Margin="10,0,0,0"/>
+            
+
+                <Button x:Name="BtnStop"
+        Content="{DynamicResource BtnDisconnect}"
+                    Click="BtnStop_Click"
+                    Width="150" Height="40"
+                    Style="{StaticResource BtnAccent}"
+                    Background="{DynamicResource BrushButtonStop}"
+                    IsEnabled="False"
+                    Margin="0,0,10,0"/>
+
+                <Button x:Name="BtnPing"
+        Content="{DynamicResource BtnPing}" 
+                    Click="BtnPing_Click"
+                    Width="130" Height="40"
+                    Style="{StaticResource BtnAccent}"
+                    Background="{DynamicResource BrushButtonPing}"/>
+            </StackPanel>
+
+            <!-- Выбранный сервер -->
+            <TextBlock x:Name="SelectedServerText"
+           Text="{DynamicResource NoServer}"
+                   Grid.Row="4" 
+                   Foreground="{DynamicResource BrushConnected}"
+                   FontSize="{DynamicResource FontSizeNormal}"
+                   Margin="0,0,0,8"/>
+
+            <!-- TabControl -->
+            <TabControl Grid.Row="5"
+                    Background="{DynamicResource BrushSurface}"
+                    BorderBrush="{DynamicResource BrushBorder}"
+                    BorderThickness="1">
+
+                <!-- Вкладка: Серверы -->
+                <TabItem Header="{DynamicResource TabServers}">
+                    <ListView x:Name="ServerList"
+                          Style="{StaticResource ServerListStyle}"
+                          ItemContainerStyle="{StaticResource ServerRowStyle}"
+                          SelectionChanged="ServerList_SelectionChanged">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="Сервер"   Width="340"
+                                            DisplayMemberBinding="{Binding Name}"/>
+                                <GridViewColumn Header="Протокол" Width="90"
+                                            DisplayMemberBinding="{Binding Protocol}"/>
+                                <GridViewColumn Header="Пинг"     Width="100"
+                                            DisplayMemberBinding="{Binding PingDisplay}"/>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </TabItem>
+
+                <!-- Вкладка: Лог -->
+                <TabItem Header="{DynamicResource TabLog}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <ListBox x:Name="LogBox"
+                             Grid.Row="0"
+                             Style="{StaticResource LogStyle}"/>
+
+                        <Button Grid.Row="1"
+                         Content="{DynamicResource BtnClearLog}"
+                            Click="BtnClearLog_Click"
+                            HorizontalAlignment="Right"
+                            Width="130" Height="28"
+                            Style="{StaticResource BtnNormal}"
+                            Margin="0,5,0,0"/>
+                    </Grid>
+                </TabItem>
+
+                <!-- Вкладка: Настройки -->
+                <TabItem Header="{DynamicResource TabSettings}">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="15">
+
+                            <!-- Тема -->
+                            <TextBlock Text="{DynamicResource ThemeLabel}"
+                               Foreground="{DynamicResource BrushAccent}"
+                               FontSize="{DynamicResource FontSizeTitle}"
+                               FontWeight="Bold"
+                               Margin="0,0,0,8"/>
+
+
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                                <ComboBox x:Name="CmbTheme"
+                                            Width="200" Height="34"
+                                            SelectionChanged="CmbTheme_SelectionChanged"
+                                            Margin="0,0,10,0"/>
+                                <Button Content="{DynamicResource BtnThemeEditor}"
+                                            Click="BtnThemeEditor_Click"
+                                            Width="110" Height="34"
+                                            Style="{StaticResource BtnNormal}"
+                                            Margin="0,0,10,0"/>
+                                <Button Content="{DynamicResource BtnLoadTheme}"
+                                            Click="BtnLoadTheme_Click"
+                                            Width="139" Height="34"
+                                            Style="{StaticResource BtnNormal}"/>
+                            </StackPanel>
+
+                            <Separator Margin="0,0,0,15"/>
+                            <!-- Язык -->
+                            <TextBlock Text="🌐 Language / Язык"
+                       Foreground="{DynamicResource BrushAccent}"
+                       FontSize="{DynamicResource FontSizeTitle}"
+                       FontWeight="Bold"
+                       Margin="0,0,0,8"/>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                                <ComboBox x:Name="CmbLanguage"
+                                  Width="150" Height="34"
+                                  SelectionChanged="CmbLanguage_SelectionChanged"/>
+                            </StackPanel>
+
+                            <Separator Margin="0,0,0,15"/>
+                            <!-- Автозапуск -->
+                            <CheckBox x:Name="ChkAutoStart"
+                            Content="Запускать приложение при старте Windows"
+                            Checked="ChkAutoStart_Checked"
+                            Unchecked="ChkAutoStart_Unchecked"
+                            Margin="0,8,0,8"
+                            VerticalAlignment="Center"
+                            FontSize="13"/>
+                            <Separator Margin="0,0,0,15"/>
+
+                            <!-- Логи -->
+                            <TextBlock Text="{DynamicResource LogsLabel}" 
+                               Foreground="{DynamicResource BrushAccent}"
+                               FontSize="{DynamicResource FontSizeTitle}"
+                               FontWeight="Bold"
+                               Margin="0,0,0,8"/>
+
+                            <Button Content="{DynamicResource BtnOpenLogs}"
+                            Click="BtnOpenLogs_Click"
+                            Width="180" Height="34"
+                            HorizontalAlignment="Left"
+                            Style="{StaticResource BtnNormal}"
+                            Margin="0,0,0,15"/>
+
+                            <Separator Margin="0,0,0,15"/>
+
+                            <!-- Бэкап -->
+                            <TextBlock Text="{DynamicResource BackupLabel}" 
+                               Foreground="{DynamicResource BrushAccent}"
+                               FontSize="{DynamicResource FontSizeTitle}"
+                               FontWeight="Bold"
+                               Margin="0,0,0,8"/>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                                <Button Content="{DynamicResource BtnExport}" 
+                                Click="BtnExportSettings_Click"
+                                Width="120" Height="34"
+                                Style="{StaticResource BtnNormal}"
+                                Margin="0,0,10,0"/>
+                                <Button Content="{DynamicResource BtnImport}" 
+                                Click="BtnImportSettings_Click"
+                                Width="120" Height="34"
+                                Style="{StaticResource BtnNormal}"/>
+                            </StackPanel>
+
+                            <Separator Margin="0,0,0,15"/>
+
+                            <!-- Xray путь -->
+                            <TextBlock Text="{DynamicResource XrayLabel}" 
+                               Foreground="{DynamicResource BrushAccent}"
+                               FontSize="{DynamicResource FontSizeTitle}"
+                               FontWeight="Bold"
+                               Margin="0,0,0,8"/>
+
+                            <StackPanel Orientation="Horizontal">
+                                <TextBox x:Name="TxtXrayPath"
+                                 Width="420" Height="34"
+                                 Style="{StaticResource InputStyle}"
+                                 FontFamily="Consolas"
+                                 Margin="0,0,10,0"/>
+                                <Button Content="{DynamicResource BtnSave}" 
+                                Click="BtnSaveXrayPath_Click"
+                                Width="100" Height="34"
+                                Style="{StaticResource BtnAccent}"
+                                Background="{DynamicResource BrushButtonConnect}"/>
+                            </StackPanel>
+
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+
+            </TabControl>
+            <!-- Версия -->
+            <TextBlock Grid.Row="5"
+           Text="BearNest - gullampis810: v1.05.26"
+           FontSize="10"
+           HorizontalAlignment="Left"
+           Margin="6,0,0,7"
+           IsHitTestVisible="False" Foreground="#FFE6C58B" Height="14" VerticalAlignment="Bottom"/>
+        </Grid>
+                <!-- Toast -->
+       <Border x:Name="ToastPanel"
+                Background="{DynamicResource BrushSurface2}"
+                BorderBrush="{DynamicResource BrushAccent}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="16,10"
+                Opacity="0"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Bottom"
+                Margin="0,0,20,20"
+                Panel.ZIndex="99">
+            <Border.RenderTransform>
+                <TranslateTransform x:Name="ToastTranslate" Y="30"/>
+            </Border.RenderTransform>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock x:Name="ToastIcon" Text="✅"
+                           FontSize="16" VerticalAlignment="Center"
+                           Margin="0,0,8,0"/>
+                <TextBlock x:Name="ToastText" Text=""
+                           Foreground="{DynamicResource BrushText}"
+                           FontSize="13" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+  </Grid>
+    </Border>
+</Window>
