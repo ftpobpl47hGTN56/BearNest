@@ -99,7 +99,12 @@ Theme editor lets you customize every color with RGB sliders and save as `.xaml`
 <img width="44" height="44" alt="image" src="https://github.com/user-attachments/assets/b9abbba7-79a0-4003-8d9c-73037b3be02c" />
 
 ## ⚠️ Requirements
+Download xray-core from:
+oor u can find xray file in core folder- which is zip .
+https://github.com/XTLS/Xray-core/releases
+Place xray.exe, geoip.dat, geosite.dat, wintun.dll into core/ folder
 
+                
 - Windows 10 / 11 x64
 - .NET 8 Runtime ([download](https://dotnet.microsoft.com/download/dotnet/8.0))
 - A working subscription URL (Clash YAML format)
