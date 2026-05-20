@@ -1,0 +1,34 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ── ЦВЕТА ─────────────────────────────────────────── -->
+    <SolidColorBrush x:Key="BrushBackground"      Color="#1e1e2e"/>
+    <SolidColorBrush x:Key="BrushSurface"         Color="#181825"/>
+    <SolidColorBrush x:Key="BrushSurface2"        Color="#313244"/>
+    <SolidColorBrush x:Key="BrushAccent"          Color="#89b4fa"/>
+    <SolidColorBrush x:Key="BrushAccentHover"     Color="#b4d0ff"/>
+    <SolidColorBrush x:Key="BrushText"            Color="#cdd6f4"/>
+    <SolidColorBrush x:Key="BrushTextMuted"       Color="#6c7086"/>
+    <SolidColorBrush x:Key="BrushBorder"          Color="#45475a"/>
+    <SolidColorBrush x:Key="BrushConnected"       Color="#a6e3a1"/>
+    <SolidColorBrush x:Key="BrushDisconnected"    Color="#f38ba8"/>
+    <SolidColorBrush x:Key="BrushButtonConnect"   Color="#a6e3a1"/>
+    <SolidColorBrush x:Key="BrushButtonStop"      Color="#f38ba8"/>
+    <SolidColorBrush x:Key="BrushButtonPing"      Color="#cba6f7"/>
+    <SolidColorBrush x:Key="BrushButtonLoad"      Color="#89b4fa"/>
+    <SolidColorBrush x:Key="BrushButtonFg"        Color="#1e1e2e"/>
+    <SolidColorBrush x:Key="BrushListHover"       Color="#2a2a3e"/>
+    <SolidColorBrush x:Key="BrushListSelected"    Color="#313244"/>
+    <SolidColorBrush x:Key="BrushTabActive"       Color="#313244"/>
+    <SolidColorBrush x:Key="BrushTabInactive"     Color="#1e1e2e"/>
+
+    <!-- ── РАЗМЕРЫ ───────────────────────────────────────── -->
+    <sys:Double x:Key="FontSizeNormal"   xmlns:sys="clr-namespace:System;assembly=mscorlib">13</sys:Double>
+    <sys:Double x:Key="FontSizeSmall"    xmlns:sys="clr-namespace:System;assembly=mscorlib">11</sys:Double>
+    <sys:Double x:Key="FontSizeLarge"    xmlns:sys="clr-namespace:System;assembly=mscorlib">18</sys:Double>
+    <sys:Double x:Key="FontSizeTitle"    xmlns:sys="clr-namespace:System;assembly=mscorlib">14</sys:Double>
+    <sys:Double x:Key="ScrollBarWidth" xmlns:sys="clr-namespace:System;assembly=mscorlib">35</sys:Double>
+    <CornerRadius x:Key="CornerRadius">6</CornerRadius>
+    <Thickness x:Key="BorderThickness">1</Thickness>
+
+</ResourceDictionary>

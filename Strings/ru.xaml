@@ -1,0 +1,70 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:s="clr-namespace:System;assembly=mscorlib">
+
+    <s:String x:Key="BtnConnect">▶  Подключить</s:String>
+    <s:String x:Key="BtnSwitch">⇄ Переключить</s:String>
+    <s:String x:Key="BtnDisconnect">■  Отключить</s:String>
+    <s:String x:Key="BtnPing">📡 Тест пинга</s:String>
+    <s:String x:Key="BtnLoad">📥 Загрузить</s:String>
+    <s:String x:Key="StatusStopped">● Остановлен</s:String>
+    <s:String x:Key="StatusConnected">● Подключён</s:String>
+    <s:String x:Key="NoServer">Сервер не выбран</s:String>
+    <s:String x:Key="TabServers">🌐 Серверы</s:String>
+    <s:String x:Key="TabLog">📋 Лог</s:String>
+    <s:String x:Key="TabSettings">⚙️ Настройки</s:String>
+    <s:String x:Key="BtnClearLog">🗑 Очистить лог</s:String>
+    <s:String x:Key="ThemeLabel">🎨 Тема оформления</s:String>
+    <s:String x:Key="BtnThemeEditor">✏️ Редактор</s:String>
+    <s:String x:Key="BtnLoadTheme">📂 Загрузить тему</s:String>
+    <s:String x:Key="AutoStartLabel">🚀 Автозапуск с Windows</s:String>
+    <s:String x:Key="LogsLabel">📋 Логи</s:String>
+    <s:String x:Key="BtnOpenLogs">📂 Открыть папку логов</s:String>
+    <s:String x:Key="BackupLabel">💾 Бэкап настроек</s:String>
+    <s:String x:Key="BtnExport">📤 Экспорт</s:String>
+    <s:String x:Key="BtnImport">📥 Импорт</s:String>
+    <s:String x:Key="XrayLabel">🔧 Путь к xray.exe</s:String>
+    <s:String x:Key="BtnSave">💾 Сохранить</s:String>
+   
+    <s:String x:Key="ThemeEditorTitle">BearNest — Редактор темы</s:String>
+    <s:String x:Key="ThemeEditorHeader">🎨 Редактор темы</s:String>
+    <s:String x:Key="BaseThemeLabel">Базовая тема:</s:String>
+    <s:String x:Key="BtnSaveTheme">💾 Сохранить тему</s:String>
+    <s:String x:Key="BtnResetEditor">↩ Сбросить</s:String>
+    <s:String x:Key="BtnApplyClose">✅ Применить и закрыть</s:String>
+    <s:String x:Key="PreviewHeader">👁 Превью</s:String>
+
+    <s:String x:Key="ColorLabelBackground">🖼  Фон окна</s:String>
+    <s:String x:Key="ColorLabelSurface">📋  Фон панелей</s:String>
+    <s:String x:Key="ColorLabelSurface2">🔲  Фон элементов</s:String>
+    <s:String x:Key="ColorLabelAccent">✨  Акцент</s:String>
+    <s:String x:Key="ColorLabelAccentHover">✨  Акцент (ховер)</s:String>
+    <s:String x:Key="ColorLabelText">📝  Текст</s:String>
+    <s:String x:Key="ColorLabelTextMuted">📝  Текст приглушённый</s:String>
+    <s:String x:Key="ColorLabelBorder">🔳  Бордер</s:String>
+    <s:String x:Key="ColorLabelConnected">🟢  Подключён</s:String>
+    <s:String x:Key="ColorLabelDisconnected">🔴  Отключён</s:String>
+    <s:String x:Key="ColorLabelButtonConnect">▶  Кнопка Подключить</s:String>
+    <s:String x:Key="ColorLabelButtonStop">■  Кнопка Отключить</s:String>
+    <s:String x:Key="ColorLabelButtonPing">📡  Кнопка Пинг</s:String>
+    <s:String x:Key="ColorLabelButtonLoad">📥  Кнопка Загрузить</s:String>
+    <s:String x:Key="ColorLabelButtonFg">🔤  Текст кнопок</s:String>
+    <s:String x:Key="ColorLabelListHover">🖱  Список ховер</s:String>
+    <s:String x:Key="ColorLabelListSelected">✅  Список выбранный</s:String>
+    <s:String x:Key="ColorLabelTabActive">📑  Вкладка активная</s:String>
+    <s:String x:Key="ColorLabelTabInactive">📑  Вкладка неактивная</s:String>
+
+<s:String x:Key="LogConnecting">Подключаемся к</s:String>
+<s:String x:Key="LogProxyOn">Прокси включён →</s:String>
+<s:String x:Key="LogProxyOff">Прокси выключен</s:String>
+<s:String x:Key="LogStopped">xray остановлен — прокси выключен</s:String>
+<s:String x:Key="LogPinging">Пингуем серверов...</s:String>
+<s:String x:Key="LogBest">Лучший:</s:String>
+<s:String x:Key="LogRestored">Восстановлен сервер:</s:String>
+<s:String x:Key="LogNoServers">Нет доступных серверов</s:String>
+<s:String x:Key="LogSwitching">Авто-переключение...</s:String>
+<s:String x:Key="LogNoResponse">Нет ответа</s:String>
+<s:String x:Key="LogSwitchedTo">Переключились на:</s:String>
+
+
+</ResourceDictionary>
