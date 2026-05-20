@@ -268,25 +268,39 @@
 
                 <!-- Вкладка: Лог -->
                 <TabItem Header="{DynamicResource TabLog}">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="*"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-                        <ListBox x:Name="LogBox"
-                             Grid.Row="0"
-                             Style="{StaticResource LogStyle}"/>
+                    <ListBox x:Name="LogBox"
+                            Grid.Row="0"
+                            Style="{StaticResource LogStyle}"/>
 
-                        <Button Grid.Row="1"
-                         Content="{DynamicResource BtnClearLog}"
-                            Click="BtnClearLog_Click"
-                            HorizontalAlignment="Right"
-                            Width="130" Height="28"
-                            Style="{StaticResource BtnNormal}"
-                            Margin="0,5,0,0"/>
+                    <Grid Grid.Row="1" Margin="0,5,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Фильтр -->
+                        <ComboBox x:Name="CmbLogFilter"
+                                Grid.Column="0"
+                                Width="130" Height="28"
+                                SelectionChanged="CmbLogFilter_SelectionChanged"
+                                Margin="0,0,8,0"/>
+
+                        <!-- Кнопка очистить -->
+                        <Button Grid.Column="2"
+                                Content="{DynamicResource BtnClearLog}"
+                                Click="BtnClearLog_Click"
+                                Width="130" Height="28"
+                                Style="{StaticResource BtnNormal}"/>
                     </Grid>
-                </TabItem>
+                </Grid>
+            </TabItem>
 
                 <!-- Вкладка: Настройки -->
                 <TabItem Header="{DynamicResource TabSettings}">
@@ -405,8 +419,8 @@
 
             </TabControl>
             <!-- Версия -->
-            <TextBlock Grid.Row="5"
-           Text="BearNest - gullampis810: v1.05.26"
+            <TextBlock Grid.Row="6"
+           Text="BearNest - gullampis810: v1.205.26"
            FontSize="10"
            HorizontalAlignment="Left"
            Margin="6,0,0,7"

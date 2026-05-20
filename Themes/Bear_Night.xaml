@@ -1,0 +1,50 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!-- 🖼  Фон окна -->
+    <SolidColorBrush x:Key="BrushBackground" Color="#181825"/>
+    <!-- 📋 Фон панелей -->
+    <SolidColorBrush x:Key="BrushSurface" Color="#160B1B"/>
+    <!-- 🔲 Фон элементов -->
+    <SolidColorBrush x:Key="BrushSurface2" Color="#090C23"/>
+    <!-- ✨ Акцент -->
+    <SolidColorBrush x:Key="BrushAccent" Color="#F09D5A"/>
+    <!-- ✨ Акцент (ховер) -->
+    <SolidColorBrush x:Key="BrushAccentHover" Color="#4E71A6"/>
+    <!-- 📝 Текст -->
+    <SolidColorBrush x:Key="BrushText" Color="#BFB89B"/>
+    <!-- 📝 Текст приглушённый -->
+    <SolidColorBrush x:Key="BrushTextMuted" Color="#4396DF"/>
+    <!-- 🔳 Бордер -->
+    <SolidColorBrush x:Key="BrushBorder" Color="#A28142"/>
+    <!-- 🟢 Подключён -->
+    <SolidColorBrush x:Key="BrushConnected" Color="#A6E3A1"/>
+    <!-- 🔴 Отключён -->
+    <SolidColorBrush x:Key="BrushDisconnected" Color="#F38BA8"/>
+    <!-- ▶  Кнопка Подключить -->
+    <SolidColorBrush x:Key="BrushButtonConnect" Color="#002600"/>
+    <!-- ■  Кнопка Отключить -->
+    <SolidColorBrush x:Key="BrushButtonStop" Color="#5A1C1D"/>
+    <!-- 📡 Кнопка Пинг -->
+    <SolidColorBrush x:Key="BrushButtonPing" Color="#38185C"/>
+    <!-- 📥 Кнопка Загрузить -->
+    <SolidColorBrush x:Key="BrushButtonLoad" Color="#171B50"/>
+    <!-- 🔤 Текст кнопок -->
+    <SolidColorBrush x:Key="BrushButtonFg" Color="#009C42"/>
+    <!-- 🖱  Список ховер -->
+    <SolidColorBrush x:Key="BrushListHover" Color="#00153E"/>
+    <!-- ✅ Список выбранный -->
+    <SolidColorBrush x:Key="BrushListSelected" Color="#004C0B"/>
+    <!-- 📑 Вкладка активная -->
+    <SolidColorBrush x:Key="BrushTabActive" Color="#234630"/>
+    <!-- 📑 Вкладка неактивная -->
+    <SolidColorBrush x:Key="BrushTabInactive" Color="#3C2C41"/>
+
+    <sys:Double x:Key="FontSizeNormal">13</sys:Double>
+    <sys:Double x:Key="FontSizeSmall">11</sys:Double>
+    <sys:Double x:Key="FontSizeLarge">18</sys:Double>
+    <sys:Double x:Key="FontSizeTitle">14</sys:Double>
+    <CornerRadius x:Key="CornerRadius">6</CornerRadius>
+    <Thickness x:Key="BorderThickness">1</Thickness>
+</ResourceDictionary>

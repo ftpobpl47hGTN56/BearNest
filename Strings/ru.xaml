@@ -65,6 +65,15 @@
 <s:String x:Key="LogSwitching">Авто-переключение...</s:String>
 <s:String x:Key="LogNoResponse">Нет ответа</s:String>
 <s:String x:Key="LogSwitchedTo">Переключились на:</s:String>
+<s:String x:Key="LogAutoStart">Автозапуск включён</s:String>
+<s:String x:Key="LogAutoStartOff">Автозапуск выключен</s:String>
+<s:String x:Key="LogThemeChanged">Тема изменена:</s:String>
+<s:String x:Key="LogDownloading">Скачиваем подписку...</s:String>
+<s:String x:Key="LogReceived">Получено символов:</s:String>
+<s:String x:Key="LogFound">Найдено серверов:</s:String>
+<s:String x:Key="LogHint">Нажми 📡 Тест пинга или выбери сервер вручную</s:String>
+<s:String x:Key="LogProxyOld">Прокси от прошлого сеанса выключен</s:String>
+<s:String x:Key="LogThemeLoaded">Загружена тема:</s:String>
 
 
 </ResourceDictionary>

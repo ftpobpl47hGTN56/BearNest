@@ -19,6 +19,9 @@ namespace VpnClient
         // Счётчик времени сессии
         private readonly DispatcherTimer _sessionTimer = new();
         private readonly RollingLogger _logger = new();
+        // Все строки лога для фильтрации
+        private readonly List<string> _allLogs = new();
+        private string _logFilter = "All";
         private DateTime _connectTime;
 
         // Счётчик трафика
@@ -29,6 +32,7 @@ namespace VpnClient
         private static readonly string AppDir = AppDomain.CurrentDomain.BaseDirectory;
         private static readonly string XrayPath = System.IO.Path.Combine(AppDir, "core", "xray.exe");
         private static readonly string ConfigPath = System.IO.Path.Combine(AppDir, "core", "config.json");
+        private bool _isSwitching = false;
         private const string ProxyHost = "127.0.0.1";
         private const int ProxyPort = 19808;
 
@@ -59,17 +63,30 @@ namespace VpnClient
             if (SystemProxy.IsEnabled())
             {
                 SystemProxy.Disable();
-                OnLog("[BearNest] Прокси от прошлого сеанса выключен");
+                OnLog($"[BearNest] {LocalizationManager.Get("LogProxyOld")}");
+
             }
 
             Loaded += async (_, _) => await LoadSubscriptionAsync();
-            // Инициализируем вкладку настроек
-            ChkAutoStart.IsChecked = AutoStart.IsEnabled();
+            Loaded += (_, _) =>
+            {
+                var savedLang = _storage.Get("language") ?? LocalizationManager.Languages[0];
+                CmbLanguage.SelectedItem = savedLang;
+                LocalizationManager.Apply(savedLang);
+            };            // Инициализируем вкладку настроек
+            ChkAutoStart.Checked   -= ChkAutoStart_Checked;
+            ChkAutoStart.Unchecked -= ChkAutoStart_Unchecked;
+            ChkAutoStart.IsChecked  = AutoStart.IsEnabled();
+            ChkAutoStart.Checked   += ChkAutoStart_Checked;
+            ChkAutoStart.Unchecked += ChkAutoStart_Unchecked;
             TxtXrayPath.Text = _storage.Get("xray_path") ?? XrayPath;
 
             // Инициализируем список тем
             foreach (var name in ThemeManager.ThemeNames)
                 CmbTheme.Items.Add(name); 
+                var savedLang = _storage.Get("language") ?? LocalizationManager.Languages[0];
+                CmbLanguage.SelectedItem = savedLang;
+                LocalizationManager.Apply(savedLang);
 
           // Восстанавливаем кастомную тему если была
             var customPath = _storage.Get("theme_custom_path");
@@ -90,13 +107,18 @@ namespace VpnClient
             foreach (var lang in LocalizationManager.Languages)
                 CmbLanguage.Items.Add(lang);
 
-            var savedLang = _storage.Get("language") ?? LocalizationManager.Languages[0];
-            CmbLanguage.SelectedItem = savedLang;
-            LocalizationManager.Apply(savedLang);
-
+      
+                // Инициализируем фильтр логов
+            CmbLogFilter.Items.Add("🔵 All");
+            CmbLogFilter.Items.Add("✅ Info");
+            CmbLogFilter.Items.Add("⚠️ Warning");
+            CmbLogFilter.Items.Add("❌ Error");
+            CmbLogFilter.Items.Add("🐛 Debug");
+            CmbLogFilter.Items.Add("🐻 BearNest");
+            CmbLogFilter.SelectedIndex = 0;
 
         }
-                // ── ТАЙМЕР СЕССИИ ────────────────────────────────────────────
+       // ── ТАЙМЕР СЕССИИ ────────────────────────────────────────────
         private void OnSessionTimerTick(object? sender, EventArgs e)
         {
             var elapsed = DateTime.Now - _connectTime;
@@ -123,6 +145,7 @@ namespace VpnClient
         private void BtnClearLog_Click(object sender, RoutedEventArgs e)
         {
             LogBox.Items.Clear();
+            _allLogs.Clear();
         }
 
         // ── ЗАГРУЗИТЬ ПОДПИСКУ ───────────────────────────────────────
@@ -139,7 +162,8 @@ namespace VpnClient
             {
                 var url = SubUrlBox.Text.Trim();
                 _storage.SetSubscriptionUrl(url);
-                OnLog("[BearNest] Скачиваем подписку...");
+               OnLog($"[BearNest] {LocalizationManager.Get("LogDownloading")}");
+
 
                 int proxyPort = _core.IsRunning ? ProxyPort : 0;
 
@@ -147,13 +171,14 @@ namespace VpnClient
                 var (content, info) = await SubscriptionParser.DownloadWithInfoAsync(url, proxyPort);
                 _subInfo = info;
 
-                OnLog($"[BearNest] Получено {content.Length} символов");
+              OnLog($"[BearNest] {LocalizationManager.Get("LogReceived")} {content.Length}");
+
 
                 // Обновляем панель статуса подписки
                 UpdateSubInfoPanel(info);
 
                 _servers = SubscriptionParser.Parse(content);
-                OnLog($"[BearNest] Найдено серверов: {_servers.Count}");
+            OnLog($"[BearNest] {LocalizationManager.Get("LogFound")} {_servers.Count}");
 
                 foreach (var s in _servers)
                     ServerList.Items.Add(s);
@@ -173,7 +198,8 @@ namespace VpnClient
                 }
 
                 if (_servers.Count > 0)
-                    OnLog("[BearNest] Нажми 📡 Тест пинга или выбери сервер вручную");
+                    OnLog($"[BearNest] {LocalizationManager.Get("LogHint")}");
+
             }
             catch (Exception ex)
             {
@@ -379,17 +405,57 @@ namespace VpnClient
         // ── ЛОГ ──────────────────────────────────────────────────────
         private void OnLog(string line)
         {
-            _logger.Write(line); //  _logger
+            _logger.Write(line);
 
             Dispatcher.Invoke(() =>
             {
-                LogBox.Items.Add(line);
-                LogBox.ScrollIntoView(LogBox.Items[^1]);
-                while (LogBox.Items.Count > 500)
-                    LogBox.Items.RemoveAt(0);
+                // Сохраняем все логи
+                _allLogs.Add(line);
+                if (_allLogs.Count > 2000)
+                    _allLogs.RemoveAt(0);
+
+                // Показываем только если проходит фильтр
+                if (MatchesFilter(line))
+                {
+                    LogBox.Items.Add(line);
+                    LogBox.ScrollIntoView(LogBox.Items[^1]);
+                    while (LogBox.Items.Count > 500)
+                        LogBox.Items.RemoveAt(0);
+                }
             });
         }
 
+        private bool MatchesFilter(string line)
+        {
+            return _logFilter switch
+            {
+                "✅ Info"       => line.Contains("[Info]"),
+                "⚠️ Warning"   => line.Contains("[Warning]"),
+                "❌ Error"      => line.Contains("[Error]"),
+                "🐛 Debug"      => line.Contains("[Debug]"),
+                "🐻 BearNest"   => line.StartsWith("[BearNest]"),
+                _               => true // All
+            };
+        }
+
+        private void ApplyLogFilter()
+        {
+            LogBox.Items.Clear();
+            foreach (var line in _allLogs)
+            {
+                if (MatchesFilter(line))
+                    LogBox.Items.Add(line);
+            }
+            if (LogBox.Items.Count > 0)
+                LogBox.ScrollIntoView(LogBox.Items[^1]);
+        }
+
+        private void CmbLogFilter_SelectionChanged(object sender,
+            System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            _logFilter = CmbLogFilter.SelectedItem as string ?? "All";
+            ApplyLogFilter();
+        }
         // ── ФОРМАТИРОВАТЬ СТРОКУ ЛОГА ────────────────────────────
         private static string FormatLogLine(string line)
         {
@@ -491,7 +557,7 @@ namespace VpnClient
 
                 if (isRunning)
                 {
-                     BtnSwitch.IsEnabled = _servers.Count > 1;
+                    BtnSwitch.IsEnabled = _servers.Count > 1;
                     StatusText.Text = LocalizationManager.Get("StatusConnected");
                     StatusText.Foreground = System.Windows.Media.Brushes.LightGreen;
                     BtnStart.IsEnabled = false;
@@ -500,34 +566,40 @@ namespace VpnClient
                 }
                 else
                 {
-                       BtnSwitch.IsEnabled = false;
+                    BtnSwitch.IsEnabled = false;
                     StatusText.Text = LocalizationManager.Get("StatusStopped");
                     StatusText.Foreground = new System.Windows.Media.SolidColorBrush(
-                                               System.Windows.Media.Color.FromRgb(243, 139, 168));
+                                            System.Windows.Media.Color.FromRgb(243, 139, 168));
                     BtnStart.IsEnabled = true;
                     BtnStop.IsEnabled = false;
                     _sessionTimer.Stop();
                     TimerText.Text = "";
                     TrafficText.Text = "";
-                    SystemProxy.Disable();
-                   OnLog($"[BearNest] {LocalizationManager.Get("LogStopped")}");
+
+                    // Не отключаем прокси, если идёт переключение серверов
+                    if (!_isSwitching)
+                    {
+                        SystemProxy.Disable();
+                    }
+
+                    OnLog($"[BearNest] {LocalizationManager.Get("LogStopped")}");
                 }
             });
-
         }
+
 
         // ── НАСТРОЙКИ ────────────────────────────────────────────────
 
         private void ChkAutoStart_Checked(object sender, RoutedEventArgs e)
         {
             AutoStart.Enable();
-            OnLog("[BearNest] Автозапуск включён");
+            OnLog($"[BearNest] {LocalizationManager.Get("LogAutoStart")}");
         }
 
-        private void ChkAutoStart_Unchecked(object sender, RoutedEventArgs e)
+      private void ChkAutoStart_Unchecked(object sender, RoutedEventArgs e)
         {
             AutoStart.Disable();
-            OnLog("[BearNest] Автозапуск выключен");
+            OnLog($"[BearNest] {LocalizationManager.Get("LogAutoStartOff")}");
         }
 
         private void BtnOpenLogs_Click(object sender, RoutedEventArgs e)
@@ -615,7 +687,8 @@ namespace VpnClient
             {
                 ThemeManager.Apply(theme);
                 _storage.Set("theme", theme);
-                OnLog($"[BearNest] Тема изменена: {theme}");
+               OnLog($"[BearNest] {LocalizationManager.Get("LogThemeChanged")} {theme}");
+
             }
         }
 
@@ -649,7 +722,9 @@ namespace VpnClient
             CmbTheme.Items.Add(name);
             CmbTheme.SelectedItem = name;
 
-        OnLog($"[BearNest] Загружена тема: {dlg.FileName}");
+          OnLog($"[BearNest] {LocalizationManager.Get("LogThemeLoaded")} {dlg.FileName}");
+                
+
         }
             catch (Exception ex)
             {
@@ -752,6 +827,7 @@ namespace VpnClient
         private async System.Threading.Tasks.Task SwitchToServerDirectAsync(
             ServerConfig server, int idx)
         {
+         _isSwitching = true;  // ← включаем флаг
             OnLog($"[BearNest] ⇄ {LocalizationManager.Get("LogSwitchedTo")} {server.Name}");
 
             StopWatchdog();
@@ -762,6 +838,7 @@ namespace VpnClient
             await _core.StopAsync();
             await System.Threading.Tasks.Task.Delay(300);
             await _core.StartAsync();
+            _isSwitching = false;  // ← выключаем флаг
 
             _selectedServer = server;
             Dispatcher.Invoke(() =>

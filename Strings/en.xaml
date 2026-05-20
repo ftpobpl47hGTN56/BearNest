@@ -67,5 +67,15 @@
 <s:String x:Key="LogNoResponse">No response</s:String>
 <s:String x:Key="LogSwitchedTo">Switched to:</s:String>
 
+<s:String x:Key="LogAutoStart">Auto-start enabled</s:String>
+<s:String x:Key="LogAutoStartOff">Auto-start disabled</s:String>
+<s:String x:Key="LogThemeChanged">Theme changed:</s:String>
+<s:String x:Key="LogDownloading">Downloading subscription...</s:String>
+<s:String x:Key="LogReceived">Received characters:</s:String>
+<s:String x:Key="LogFound">Servers found:</s:String>
+<s:String x:Key="LogHint">Click 📡 Ping Test or select server manually</s:String>
+<s:String x:Key="LogProxyOld">Previous session proxy disabled</s:String>
+<s:String x:Key="LogThemeLoaded">Theme loaded:</s:String>
+
 
 </ResourceDictionary>
