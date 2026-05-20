@@ -6,6 +6,11 @@ written in C# WPF (.NET 8).
 
 > No bloat. No memory leaks. No crashes after 8-hour sessions.
 
+
+
+<img width="1047" height="841" alt="image" src="https://github.com/user-attachments/assets/8b502d09-4207-47d4-a492-5556394552e8" />
+
+
 ---
 
 ## ✨ Features
