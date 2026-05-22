@@ -1,0 +1,32 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <SolidColorBrush x:Key="BrushBackground"      Color="#1a1a2e"/>
+    <SolidColorBrush x:Key="BrushSurface"         Color="#141428"/>
+    <SolidColorBrush x:Key="BrushSurface2"        Color="#252545"/>
+    <SolidColorBrush x:Key="BrushAccent"          Color="#4a90d9"/>
+    <SolidColorBrush x:Key="BrushAccentHover"     Color="#6aaaf0"/>
+    <SolidColorBrush x:Key="BrushText"            Color="#e8e8f0"/>
+    <SolidColorBrush x:Key="BrushTextMuted"       Color="#6060a0"/>
+    <SolidColorBrush x:Key="BrushBorder"          Color="#3a3a6a"/>
+    <SolidColorBrush x:Key="BrushConnected"       Color="#50c878"/>
+    <SolidColorBrush x:Key="BrushDisconnected"    Color="#ff6b8a"/>
+    <SolidColorBrush x:Key="BrushButtonConnect"   Color="#50c878"/>
+    <SolidColorBrush x:Key="BrushButtonStop"      Color="#ff6b8a"/>
+    <SolidColorBrush x:Key="BrushButtonPing"      Color="#9b7fe8"/>
+    <SolidColorBrush x:Key="BrushButtonLoad"      Color="#4a90d9"/>
+    <SolidColorBrush x:Key="BrushButtonFg"        Color="#1a1a2e"/>
+    <SolidColorBrush x:Key="BrushListHover"       Color="#252545"/>
+    <SolidColorBrush x:Key="BrushListSelected"    Color="#303060"/>
+    <SolidColorBrush x:Key="BrushTabActive"       Color="#252545"/>
+    <SolidColorBrush x:Key="BrushTabInactive"     Color="#1a1a2e"/>
+
+    <sys:Double x:Key="FontSizeNormal"   xmlns:sys="clr-namespace:System;assembly=mscorlib">13</sys:Double>
+    <sys:Double x:Key="FontSizeSmall"    xmlns:sys="clr-namespace:System;assembly=mscorlib">11</sys:Double>
+    <sys:Double x:Key="FontSizeLarge"    xmlns:sys="clr-namespace:System;assembly=mscorlib">18</sys:Double>
+    <sys:Double x:Key="FontSizeTitle"    xmlns:sys="clr-namespace:System;assembly=mscorlib">14</sys:Double>
+    <sys:Double x:Key="ScrollBarWidth" xmlns:sys="clr-namespace:System;assembly=mscorlib">35</sys:Double>
+    <CornerRadius x:Key="CornerRadius">10</CornerRadius>
+    <Thickness x:Key="BorderThickness">1</Thickness>
+
+</ResourceDictionary>

@@ -1,0 +1,90 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:s="clr-namespace:System;assembly=mscorlib">
+
+    <s:String x:Key="BtnConnect">▶  Connect</s:String>
+    <s:String x:Key="BtnSwitch">⇄ Switch Server</s:String>
+    <s:String x:Key="BtnDisconnect">■  Disconnect</s:String>
+    <s:String x:Key="BtnPing">📡 Ping Test</s:String>
+    <s:String x:Key="BtnLoad">📥 Load</s:String>
+    <s:String x:Key="StatusStopped">● Stopped</s:String>
+    <s:String x:Key="StatusConnected">● Connected</s:String>
+    <s:String x:Key="NoServer">No server selected</s:String>
+    <s:String x:Key="TabServers">🌐 Servers</s:String>
+    <s:String x:Key="TabLog">📋 Log</s:String>
+    <s:String x:Key="TabSettings">⚙️ Settings</s:String>
+    <s:String x:Key="BtnClearLog">🗑 Clear Log</s:String>
+    <s:String x:Key="ThemeLabel">🎨 Theme</s:String>
+    <s:String x:Key="BtnThemeEditor">✏️ Editor</s:String>
+    <s:String x:Key="BtnLoadTheme">📂 Load Theme</s:String>
+    <s:String x:Key="AutoStartLabel">🚀 Start with Windows</s:String>
+    <s:String x:Key="AutoStartContent">Start with Windows</s:String>
+    <s:String x:Key="LogsLabel">📋 Logs</s:String>
+    <s:String x:Key="BtnOpenLogs">📂 Open Logs Folder</s:String>
+    <s:String x:Key="BackupLabel">💾 Backup Settings</s:String>
+    <s:String x:Key="BtnExport">📤 Export</s:String>
+    <s:String x:Key="BtnImport">📥 Import</s:String>
+    <s:String x:Key="XrayLabel">🔧 Path to xray.exe</s:String>
+    <s:String x:Key="BtnSave">💾 Save</s:String> 
+  
+    <s:String x:Key="ThemeEditorTitle">BearNest — Theme Editor</s:String>
+    <s:String x:Key="ThemeEditorHeader">🎨 Theme Editor</s:String>
+    <s:String x:Key="BaseThemeLabel">Base theme:</s:String>
+    <s:String x:Key="BtnSaveTheme">💾 Save theme</s:String>
+    <s:String x:Key="BtnResetEditor">↩ Reset</s:String>
+    <s:String x:Key="BtnApplyClose">✅ Apply and close</s:String>
+    <s:String x:Key="PreviewHeader">👁 Preview</s:String>
+    
+    <s:String x:Key="ColorLabelBackground">🖼  Window background</s:String>
+    <s:String x:Key="ColorLabelSurface">📋  Panel background</s:String>
+    <s:String x:Key="ColorLabelSurface2">🔲  Element background</s:String>
+    <s:String x:Key="ColorLabelAccent">✨  Accent</s:String>
+    <s:String x:Key="ColorLabelAccentHover">✨  Accent (hover)</s:String>
+    <s:String x:Key="ColorLabelText">📝  Text</s:String>
+    <s:String x:Key="ColorLabelTextMuted">📝  Muted text</s:String>
+    <s:String x:Key="ColorLabelBorder">🔳  Border</s:String>
+    <s:String x:Key="ColorLabelConnected">🟢  Connected</s:String>
+    <s:String x:Key="ColorLabelDisconnected">🔴  Disconnected</s:String>
+    <s:String x:Key="ColorLabelButtonConnect">▶  Connect button</s:String>
+    <s:String x:Key="ColorLabelButtonStop">■  Disconnect button</s:String>
+    <s:String x:Key="ColorLabelButtonPing">📡  Ping button</s:String>
+    <s:String x:Key="ColorLabelButtonLoad">📥  Load button</s:String>
+    <s:String x:Key="ColorLabelButtonFg">🔤  Button text</s:String>
+    <s:String x:Key="ColorLabelListHover">🖱  List hover</s:String>
+    <s:String x:Key="ColorLabelListSelected">✅  List selected</s:String>
+    <s:String x:Key="ColorLabelTabActive">📑  Active tab</s:String>
+    <s:String x:Key="ColorLabelTabInactive">📑  Inactive tab</s:String>
+
+    <!-- Лог сообщения -->
+<s:String x:Key="LogConnecting">Connecting to</s:String>
+<s:String x:Key="LogProxyOn">Proxy enabled →</s:String>
+<s:String x:Key="LogProxyOff">Proxy disabled</s:String>
+<s:String x:Key="LogStopped">xray stopped — proxy disabled</s:String>
+<s:String x:Key="LogPinging">Pinging servers...</s:String>
+<s:String x:Key="LogBest">Best server:</s:String>
+<s:String x:Key="LogRestored">Restored server:</s:String>
+<s:String x:Key="LogNoServers">No servers available</s:String>
+<s:String x:Key="LogSwitching">Auto-switching...</s:String>
+<s:String x:Key="LogNoResponse">No response</s:String>
+<s:String x:Key="LogSwitchedTo">Switched to:</s:String>
+
+<s:String x:Key="LogAutoStart">Auto-start enabled</s:String>
+<s:String x:Key="LogAutoStartOff">Auto-start disabled</s:String>
+<s:String x:Key="LogThemeChanged">Theme changed:</s:String>
+<s:String x:Key="LogDownloading">Downloading subscription...</s:String>
+<s:String x:Key="LogReceived">Received characters:</s:String>
+<s:String x:Key="LogFound">Servers found:</s:String>
+<s:String x:Key="LogHint">Click 📡 Ping Test or select server manually</s:String>
+<s:String x:Key="LogProxyOld">Previous session proxy disabled</s:String>
+<s:String x:Key="LogThemeLoaded">Theme loaded:</s:String>
+
+<s:String x:Key="ColServer">Server</s:String>
+<s:String x:Key="ColProtocol">Protocol</s:String>
+<s:String x:Key="ColPing">Ping</s:String>
+
+<s:String x:Key="SelectedServer">Selected:</s:String>
+<s:String x:Key="SwitchedTo">✅ Switched to:</s:String>
+<s:String x:Key="ExpireUntil">until</s:String>
+<s:String x:Key="ExpireDays">days</s:String>
+
+</ResourceDictionary>
