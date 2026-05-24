@@ -119,10 +119,19 @@ namespace VpnClient
 
         }
        // ── ТАЙМЕР СЕССИИ ────────────────────────────────────────────
+        //  ("dd.MM HH:mm")
         private void OnSessionTimerTick(object? sender, EventArgs e)
         {
             var elapsed = DateTime.Now - _connectTime;
-            TimerText.Text = elapsed.ToString(@"hh\:mm\:ss");
+        
+            // Дни отображаем только если прошло >= 1 дня
+            string timeStr = elapsed.TotalDays >= 1
+                ? $"{(int)elapsed.TotalDays}д {elapsed.Hours:D2}:{elapsed.Minutes:D2}:{elapsed.Seconds:D2}"
+                : $"{elapsed.Hours:D2}:{elapsed.Minutes:D2}:{elapsed.Seconds:D2}";
+        
+            string startStr = _connectTime.ToString("dd.MM HH:mm");
+        
+            TimerText.Text = $"{timeStr}  (с {startStr})";
         }
 
         // ── ПОКАЗАТЬ ОКНО ────────────────────────────────────────────
