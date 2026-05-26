@@ -1,9 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using System.Text.Json.Nodes;
 using System.Web;
 
 namespace VpnClient
@@ -32,14 +33,36 @@ namespace VpnClient
                 Timeout = TimeSpan.FromSeconds(15)
             };
 
-            client.DefaultRequestHeaders.Add("User-Agent", "clash-verge/1.0");
-            client.DefaultRequestHeaders.Add("Accept", "*/*");
+
+            client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "Happ/2.16.2/Windows/2605221224603");
+
+
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+       
+            // Добавь эти три:
+            client.DefaultRequestHeaders.Add("X-Device-Os", "Windows");
+            client.DefaultRequestHeaders.Add("X-Ver-Os", "10_10.0.19045");
+            client.DefaultRequestHeaders.Add("X-Hwid", "4c7f17cb-05b4-4ec0-b254-275442c3c71d");
+
 
             return await client.GetStringAsync(url);
         }
 
         public static List<ServerConfig> Parse(string content)
         {
+            // В методе Parse — добавь проверку В САМОМ НАЧАЛЕ, до остальных форматов:
+            if (content.TrimStart().StartsWith("["))
+            {
+                try
+                {
+                    var fromHapp = ParseHappXrayArray(content);
+                    if (fromHapp.Count > 0) return fromHapp;
+                }
+                catch { }
+            }
+
+
+
             var result = new List<ServerConfig>();
             content = content.Trim();
             // Нормализуем переносы строк — убираем \r
@@ -85,6 +108,120 @@ namespace VpnClient
             return result;
         }
 
+
+        // ── Новый метод ──────────────────────────────────────────────────────
+        private static List<ServerConfig> ParseHappXrayArray(string json)
+        {
+            var result = new List<ServerConfig>();
+            var arr = JsonNode.Parse(json) as JsonArray;
+            if (arr == null) return result;
+
+            foreach (var item in arr)
+            {
+                if (item is not JsonObject obj) continue;
+
+                var remarks = obj["remarks"]?.GetValue<string>() ?? "";
+                var outbounds = obj["outbounds"] as JsonArray;
+                if (outbounds == null) continue;
+
+                // Берём первый outbound с тегом начинающимся на "proxy"
+                JsonObject? proxyOut = null;
+                foreach (var o in outbounds)
+                {
+                    if (o is not JsonObject oo) continue;
+                    var tag = oo["tag"]?.GetValue<string>() ?? "";
+                    if (tag.StartsWith("proxy"))
+                    {
+                        proxyOut = oo;
+                        break;
+                    }
+                }
+                if (proxyOut == null) continue;
+
+                var protocol = proxyOut["protocol"]?.GetValue<string>() ?? "";
+                if (protocol != "vless" && protocol != "vmess" && protocol != "trojan") continue;
+
+                var settings = proxyOut["settings"] as JsonObject;
+                var stream = proxyOut["streamSettings"] as JsonObject;
+                if (settings == null) continue;
+
+                // Извлекаем адрес/порт/id из vnext[0]
+                var vnext = (settings["vnext"] as JsonArray)?[0] as JsonObject;
+                if (vnext == null) continue;
+
+                var address = vnext["address"]?.GetValue<string>() ?? "";
+                int.TryParse(vnext["port"]?.ToString(), out var port);
+
+                var users = (vnext["users"] as JsonArray)?[0] as JsonObject;
+                var id = users?["id"]?.GetValue<string>() ?? "";
+                var flow = users?["flow"]?.GetValue<string>() ?? "";
+
+                // streamSettings
+                var network = stream?["network"]?.GetValue<string>() ?? "tcp";
+                var security = stream?["security"]?.GetValue<string>() ?? "none";
+
+                var cfg = new ServerConfig
+                {
+                    Protocol = protocol,
+                    Name = remarks,
+                    Address = address,
+                    Port = port,
+                    Id = id,
+                    Flow = flow,
+                    Network = network,
+                    Security = security,
+                };
+
+                // Reality
+                if (security == "reality")
+                {
+                    var rs = stream?["realitySettings"] as JsonObject;
+                    cfg.ServerName = rs?["serverName"]?.GetValue<string>() ?? "";
+                    cfg.PublicKey = rs?["publicKey"]?.GetValue<string>() ?? "";
+                    cfg.ShortId = rs?["shortId"]?.GetValue<string>() ?? "";
+                    cfg.Fingerprint = rs?["fingerprint"]?.GetValue<string>() ?? "chrome";
+                }
+                else if (security == "tls")
+                {
+                    var ts = stream?["tlsSettings"] as JsonObject;
+                    cfg.ServerName = ts?["serverName"]?.GetValue<string>() ?? "";
+                    cfg.Fingerprint = ts?["fingerprint"]?.GetValue<string>() ?? "chrome";
+                }
+
+                // xhttp
+                if (network == "xhttp")
+                {
+                    var xh = stream?["xhttpSettings"] as JsonObject;
+                    cfg.Path = xh?["path"]?.GetValue<string>() ?? "/";
+                    cfg.XhttpHost = xh?["host"]?.GetValue<string>() ?? "";
+                    cfg.XhttpMode = xh?["mode"]?.GetValue<string>() ?? "auto";
+
+                    var xmux = (xh?["extra"] as JsonObject)?["xmux"] as JsonObject;
+                    if (xmux != null)
+                    {
+                        cfg.HasXmux = true;
+                        if (int.TryParse(xmux["cMaxLifetimeMs"]?.ToString(), out var lt))
+                            cfg.XmuxMaxLifetime = lt;
+                        cfg.XmuxMaxReuse = xmux["cMaxReuseTimes"]?.ToString() ?? "";
+                        cfg.XmuxConcurrency = xmux["maxConcurrency"]?.ToString() ?? "";
+                    }
+                }
+                else if (network == "ws")
+                {
+                    var ws = stream?["wsSettings"] as JsonObject;
+                    cfg.Path = ws?["path"]?.GetValue<string>() ?? "/";
+                }
+
+                if (string.IsNullOrEmpty(cfg.Address) || port == 0) continue;
+                result.Add(cfg);
+            }
+
+            return result;
+        }
+
+
+
+
         // ── ПАРСЕР CLASH YAML ────────────────────────────────────────
         // Читаем секцию proxies: вручную без YAML библиотеки
         private static List<ServerConfig> ParseClashYaml(string yaml)
@@ -106,11 +243,17 @@ namespace VpnClient
             System.Diagnostics.Debug.WriteLine($"[Parser] >>>{yaml[start..Math.Min(start + 100, yaml.Length)]}<<<");
 
             var lines = yaml[start..].Split('\n');
+            System.Diagnostics.Debug.WriteLine($"[Parser] всего строк после proxies: {lines.Length}");
             var proxyLines = new List<string>();
             foreach (var line in lines)
             {
-                if (line.Length > 0 && line[0] != ' ' && line[0] != '-' && line.Contains(':'))
+                System.Diagnostics.Debug.WriteLine($"[Parser] строка: '{line[..Math.Min(50, line.Length)]}'");
+                if (line.TrimStart().StartsWith("rules:") ||
+         line.TrimStart().StartsWith("rule-providers:"))
+                {
+                    System.Diagnostics.Debug.WriteLine($"[Parser] СТОП на строке: '{line}'");
                     break;
+                }
                 proxyLines.Add(line);
             }
 
@@ -231,6 +374,27 @@ namespace VpnClient
             if (type == "ss" || type == "shadowsocks")
                 cfg.Id = Get("password");
 
+            // xhttp-opts
+            if (cfg.Network == "xhttp")
+            {
+                var mode = GetNested("xhttp-opts", "mode");
+                if (!string.IsNullOrEmpty(mode)) cfg.XhttpMode = mode;
+
+                var host = GetNested("xhttp-opts", "host");
+                if (!string.IsNullOrEmpty(host)) cfg.XhttpHost = host;
+
+                var xmuxConcurrency = GetNested("xmux", "maxConcurrency");
+                if (!string.IsNullOrEmpty(xmuxConcurrency))
+                {
+                    cfg.HasXmux = true;
+                    cfg.XmuxConcurrency = xmuxConcurrency;
+                    var lifetime = GetNested("xmux", "cMaxLifetimeMs");
+                    if (int.TryParse(lifetime, out var lt)) cfg.XmuxMaxLifetime = lt;
+                    var reuse = GetNested("xmux", "cMaxReuseTimes");
+                    if (!string.IsNullOrEmpty(reuse)) cfg.XmuxMaxReuse = reuse;
+                }
+            }
+
             if (string.IsNullOrEmpty(cfg.Name)) cfg.Name = $"{type}://{cfg.Address}:{cfg.Port}";
             if (string.IsNullOrEmpty(cfg.Network)) cfg.Network = "tcp";
             if (string.IsNullOrEmpty(cfg.Fingerprint)) cfg.Fingerprint = "chrome";
@@ -345,14 +509,27 @@ namespace VpnClient
             {
                 Timeout = TimeSpan.FromSeconds(15)
             };
-            client.DefaultRequestHeaders.Add("User-Agent", "clash-verge/1.0");
-            client.DefaultRequestHeaders.Add("Accept", "*/*");
+            client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "Happ/2.16.2/Windows/2605221224603");
+
+
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+            // Добавь эти три:
+            client.DefaultRequestHeaders.Add("X-Device-Os", "Windows");
+            client.DefaultRequestHeaders.Add("X-Ver-Os", "10_10.0.19045");
+            client.DefaultRequestHeaders.Add("X-Hwid", "4c7f17cb-05b4-4ec0-b254-275442c3c71d");
+
 
             using var response = await client.GetAsync(url);
             var content = await response.Content.ReadAsStringAsync();
+            // Временно — смотрим первые 500 символов
+            System.Diagnostics.Debug.WriteLine($"[JSON] ContentType: {response.Content.Headers.ContentType}");
+            System.Diagnostics.Debug.WriteLine($"[JSON] Length: {content.Length}");
+            System.Diagnostics.Debug.WriteLine($"[JSON] First500: {content[..Math.Min(500, content.Length)]}");
 
-            // Парсим заголовки
-            var info = new SubscriptionInfo();
+           
+
+                        // Парсим заголовки
+                        var info = new SubscriptionInfo();
 
             // profile-title
             if (response.Headers.TryGetValues("profile-title", out var titles))
