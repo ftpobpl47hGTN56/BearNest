@@ -129,7 +129,7 @@ UI language: English / Russian
 - [ ] TUN mode (full traffic capture, like Happ)
 - [ ] BearNest Mobile (Android)
 - [ ] Multiple subscription support
-- [ ] Speed test per server
+- [ ] SplitTun - direct
 
 ---
 <img width="44" height="44" alt="image" src="https://github.com/user-attachments/assets/b9abbba7-79a0-4003-8d9c-73037b3be02c" />
