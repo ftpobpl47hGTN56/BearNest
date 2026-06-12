@@ -1,5 +1,6 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                     xmlns:emoji="clr-namespace:Emoji.Wpf;assembly=Emoji.Wpf">
 
     <SolidColorBrush x:Key="BrushBackground"      Color="#1a1a2e"/>
     <SolidColorBrush x:Key="BrushSurface"         Color="#141428"/>
