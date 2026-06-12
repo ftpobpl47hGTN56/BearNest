@@ -10,12 +10,13 @@ namespace VpnClient
 {
     public static class ConfigGenerator
     {
-        public static string Generate(ServerConfig s)
+        // ── ГЛАВНЫЙ МЕТОД ─────────────────────────────────────────────
+        // split = null → поведение как раньше (только bittorrent → direct)
+        public static string Generate(ServerConfig s, SplitTunnelSettings? split = null)
         {
-            // Базовая структура конфига xray
             var config = new JsonObject
             {
-             ["log"] = new JsonObject
+                ["log"] = new JsonObject
                 {
                     ["loglevel"] = "error"
                 },
@@ -49,16 +50,9 @@ namespace VpnClient
                 },
                 ["routing"] = new JsonObject
                 {
-                    ["domainStrategy"] = "IPIfNonMatch",
-                    ["rules"] = new JsonArray
-                    {
-                        new JsonObject
-                        {
-                            ["type"]        = "field",
-                            ["outboundTag"] = "direct",
-                            ["protocol"]    = new JsonArray { "bittorrent" }
-                        }
-                    }
+                    // СТАЛО:
+                    ["domainStrategy"] = "AsIs",
+                    ["rules"] = BuildRoutingRules(split)
                 }
             };
 
@@ -69,6 +63,92 @@ namespace VpnClient
             });
         }
 
+        private static bool IsValidXrayDomain(string d)
+        {
+            // разрешаем: domain.com, sub.domain.com, geosite:tag, domain:tag
+            if (d.StartsWith("geosite:", StringComparison.OrdinalIgnoreCase)) return true;
+            if (d.StartsWith("regexp:", StringComparison.OrdinalIgnoreCase)) return true;
+            if (d.StartsWith("keyword:", StringComparison.OrdinalIgnoreCase)) return true;
+            if (d.StartsWith("full:", StringComparison.OrdinalIgnoreCase)) return true;
+            // обычный домен — только буквы, цифры, точки, дефисы
+            return System.Text.RegularExpressions.Regex.IsMatch(d, @"^[a-zA-Z0-9\.\-\*]+$");
+        }
+
+        // ── СТРОИМ ROUTING RULES ─────────────────────────────────────
+        private static JsonArray BuildRoutingRules(SplitTunnelSettings? split)
+        {
+            var rules = new JsonArray();
+
+            // 1. Bittorrent всегда напрямую (было раньше, оставляем)
+            rules.Add(new JsonObject
+            {
+                ["type"] = "field",
+                ["outboundTag"] = "direct",
+                ["protocol"] = new JsonArray { "bittorrent" }
+            });
+
+            if (split == null) return rules;
+
+            // 2. Bypass LAN — локальная сеть напрямую
+            if (split.BypassLan)
+            {
+                rules.Add(new JsonObject
+                {
+                    ["type"] = "field",
+                    ["outboundTag"] = "direct",
+                    ["ip"] = new JsonArray { "geoip:private" }
+                });
+            }
+
+            // 3. Bypass домены — идут напрямую без VPN
+            // 3. Bypass домены — идут напрямую без VPN
+            var domains = split.BypassDomains
+                .SelectMany(d => d.Split('|', StringSplitOptions.RemoveEmptyEntries))  // разбиваем если вдруг пришли с |
+                .Select(d => d.Trim())
+                .Where(d => !string.IsNullOrWhiteSpace(d))
+                .Where(d => !d.Contains(' '))           // убираем строки с пробелами
+                .Where(d => IsValidXrayDomain(d))       // только валидные записи
+                .Distinct()
+                .ToList();
+
+            if (domains.Count > 0)
+            {
+                var domainArr = new JsonArray();
+                foreach (var d in domains)
+                    domainArr.Add(JsonValue.Create(d));
+
+                rules.Add(new JsonObject
+                {
+                    ["type"] = "field",
+                    ["outboundTag"] = "direct",
+                    ["domain"] = domainArr
+                });
+            }
+
+            // 4. Bypass IP / CIDR — идут напрямую без VPN
+            var ips = split.BypassIPs
+                .Select(ip => ip.Trim())
+                .Where(ip => !string.IsNullOrWhiteSpace(ip))
+                .ToList();
+
+            if (ips.Count > 0)
+            {
+                var ipArr = new JsonArray();
+                foreach (var ip in ips)
+                    ipArr.Add(JsonValue.Create(ip));
+
+                rules.Add(new JsonObject
+                {
+                    ["type"] = "field",
+                    ["outboundTag"] = "direct",
+                    ["ip"] = ipArr
+                });
+            }
+
+            return rules;
+        }
+
+        // ── СТРОИМ OUTBOUND ───────────────────────────────────────────
         private static JsonObject BuildOutbound(ServerConfig s)
         {
             var outbound = new JsonObject { ["tag"] = "proxy" };
@@ -135,12 +215,29 @@ namespace VpnClient
                 }
                 else if (s.Network == "xhttp")
                 {
-                    stream["xhttpSettings"] = new JsonObject
+                    var xhttpSettings = new JsonObject
                     {
                         ["path"] = s.Path,
-                        ["host"] = s.ServerName,
-                        ["mode"] = "auto"
+                        ["host"] = !string.IsNullOrEmpty(s.XhttpHost) ? s.XhttpHost : s.ServerName,
+                        ["mode"] = !string.IsNullOrEmpty(s.XhttpMode) ? s.XhttpMode : "auto"
                     };
+
+                    if (s.HasXmux)
+                    {
+                        xhttpSettings["extra"] = new JsonObject
+                        {
+                            ["xmux"] = new JsonObject
+                            {
+                                ["cMaxLifetimeMs"] = s.XmuxMaxLifetime,
+                                ["cMaxReuseTimes"] = s.XmuxMaxReuse,
+                                ["maxConcurrency"] = s.XmuxConcurrency,
+                                ["maxConnections"] = 0,
+                                ["hKeepAlivePeriod"] = 30
+                            }
+                        };
+                    }
+
+                    stream["xhttpSettings"] = xhttpSettings;
                 }
                 else if (s.Network == "grpc")
                 {

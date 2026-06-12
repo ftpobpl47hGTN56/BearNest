@@ -29,10 +29,16 @@ namespace VpnClient
         }
 
         // ── ЗАПУСК ──────────────────────────────────────────────────
-        public Task StartAsync()
+        public async Task StartAsync()
         {
             if (IsRunning)
-                return Task.CompletedTask;
+                return;
+            // Убиваем зависшие процессы xray чтобы освободить порт
+            foreach (var zombie in Process.GetProcessesByName("xray"))
+            {
+                try { zombie.Kill(); zombie.WaitForExit(1000); } catch { }
+            }
+            await Task.Delay(300); // ждём освобождения порта
 
             _cts = new CancellationTokenSource();
 
@@ -59,10 +65,19 @@ namespace VpnClient
             _ = ReadStreamAsync(_process.StandardOutput, _cts.Token);
             _ = ReadStreamAsync(_process.StandardError, _cts.Token);
 
+            // Ждём 500мс и проверяем — не упал ли xray сразу
+            await Task.Delay(500);
+
+            if (_process.HasExited)
+            {
+                // xray упал (порт занят или другая ошибка) — не говорим "подключено"
+                LogReceived?.Invoke($"[VpnClient] Xray failed to start (exit code: {_process.ExitCode})");
+                StatusChanged?.Invoke(false);
+                return;
+            }
+
             StatusChanged?.Invoke(true);
             LogReceived?.Invoke("[VpnClient] Xray process started.");
-
-            return Task.CompletedTask;
         }
 
         // ── ОСТАНОВКА ────────────────────────────────────────────────

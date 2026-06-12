@@ -1,7 +1,10 @@
 ﻿<Application x:Class="VpnClient.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             ShutdownMode="OnExplicitShutdown">
+             ShutdownMode="OnExplicitShutdown"
+             xmlns:emoji="clr-namespace:Emoji.Wpf;assembly=Emoji.Wpf"
+             xmlns:local="clr-namespace:VpnClient">
+    <!-- 1. Добавлено пространство имен (укажите ваш namespace вместо VpnClient) -->
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -9,6 +12,17 @@
                 <ResourceDictionary Source="Themes/Styles.xaml"/>
                 <ResourceDictionary Source="Strings/ru.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+
+            <!-- Конвертер цвета логов -->
+            <local:LogColorConverter x:Key="LogColorConverter"/>
+
+            <!-- Цветные эмодзи для всех TextBlock -->
+            <!-- 2. Добавлен x:Key, совпадающий с типом, чтобы стиль остался неявным (implicit) -->
+            <Style x:Key="{x:Type TextBlock}" TargetType="TextBlock">
+                <Setter Property="FontFamily" 
+                        Value="Segoe UI Emoji, Segoe UI, Segoe UI Symbol"/>
+            </Style>
+
         </ResourceDictionary>
     </Application.Resources>
 </Application>

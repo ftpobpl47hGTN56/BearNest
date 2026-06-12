@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Data.Sqlite; 
+using Microsoft.Data.Sqlite;
 using System.IO;
 
 namespace VpnClient
@@ -12,7 +12,6 @@ namespace VpnClient
     {
         private readonly SqliteConnection _db;
 
-        // Храним базу рядом с exe — в папке AppData
         private static string DbPath =>
             Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -20,7 +19,6 @@ namespace VpnClient
 
         public AppStorage()
         {
-            // Создаём папку если нет
             Directory.CreateDirectory(Path.GetDirectoryName(DbPath)!);
 
             _db = new SqliteConnection($"Data Source={DbPath}");
@@ -64,7 +62,7 @@ namespace VpnClient
             return result as string;
         }
 
-        // ── УДОБНЫЕ МЕТОДЫ ───────────────────────────────────────────
+        // ── УДОБНЫЕ МЕТОДЫ — ОСНОВНЫЕ ────────────────────────────────
         public void SetSubscriptionUrl(string url) => Set("sub_url", url);
         public string? GetSubscriptionUrl() => Get("sub_url");
 
@@ -73,6 +71,40 @@ namespace VpnClient
 
         public void SetAutoConnect(bool value) => Set("auto_connect", value ? "1" : "0");
         public bool GetAutoConnect() => Get("auto_connect") == "1";
+
+        // ── УДОБНЫЕ МЕТОДЫ — СПЛИТ-ТОННЕЛИНГ ────────────────────────
+
+        /// <summary>
+        /// Сохраняет список доменов для bypass.
+        /// Домены передаются как один текст (каждый домен на новой строке).
+        /// </summary>
+        public void SetBypassDomains(string domainsText) => Set("split_domains", domainsText);
+
+        /// <summary>
+        /// Возвращает сохранённый текст доменов (каждый на новой строке).
+        /// </summary>
+        public string GetBypassDomains() => Get("split_domains") ?? string.Empty;
+
+        /// <summary>
+        /// Сохраняет список IP/CIDR для bypass.
+        /// Адреса передаются как один текст (каждый на новой строке).
+        /// </summary>
+        public void SetBypassIPs(string ipsText) => Set("split_ips", ipsText);
+
+        /// <summary>
+        /// Возвращает сохранённый текст IP-адресов (каждый на новой строке).
+        /// </summary>
+        public string GetBypassIPs() => Get("split_ips") ?? string.Empty;
+
+        /// <summary>
+        /// Сохраняет флаг "bypass LAN" (локальная сеть напрямую).
+        /// </summary>
+        public void SetBypassLan(bool value) => Set("split_bypass_lan", value ? "1" : "0");
+
+        /// <summary>
+        /// Возвращает флаг "bypass LAN". По умолчанию true.
+        /// </summary>
+        public bool GetBypassLan() => (Get("split_bypass_lan") ?? "1") == "1";
 
         public void Dispose() => _db.Dispose();
     }

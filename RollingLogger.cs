@@ -9,6 +9,7 @@ namespace VpnClient
 {
     public class RollingLogger : IDisposable
     {
+
         private readonly string _logDir;
         private readonly long _maxBytes;
         private readonly int _maxFiles;
