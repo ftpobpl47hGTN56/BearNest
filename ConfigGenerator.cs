@@ -32,6 +32,17 @@ namespace VpnClient
                             ["auth"] = "noauth",
                             ["udp"]  = true
                         },
+                        // ДОБАВЛЕНО: sniffing нужен для TUN-режима.
+                        // tun2socks отдаёт xray уже РЕЗОЛВНУТЫЕ IP, а не домены.
+                        // Без sniffing правила по доменам (bypass-список) просто
+                        // не срабатывают — xray видит только IP и не знает, какому
+                        // домену он принадлежит.
+                        ["sniffing"] = new JsonObject
+                        {
+                            ["enabled"] = true,
+                            ["destOverride"] = new JsonArray { "http", "tls", "quic" },
+                            ["routeOnly"] = false
+                        },
                         ["tag"] = "socks"
                     },
                     new JsonObject
@@ -45,7 +56,7 @@ namespace VpnClient
                 ["outbounds"] = new JsonArray
                 {
                     BuildOutbound(s),
-                    new JsonObject { ["protocol"] = "freedom", ["tag"] = "direct" },
+                    BuildDirectOutbound(split),
                     new JsonObject { ["protocol"] = "blackhole", ["tag"] = "block" }
                 },
                 ["routing"] = new JsonObject
@@ -55,6 +66,20 @@ namespace VpnClient
                     ["rules"] = BuildRoutingRules(split)
                 }
             };
+
+            // ── ДОБАВЛЕНО: DNS-секция для TUN-режима ─────────────────
+            // В TUN-режиме DNS-запросы системы тоже идут в туннель.
+            // Без явной DNS-секции xray будет использовать системный резолвер,
+            // который в TUN-режиме указывает на сам туннель → петля.
+            if (split?.TunMode == true)
+            {
+                config["dns"] = new JsonObject
+                {
+                    ["servers"] = new JsonArray { "1.1.1.1", "8.8.8.8" },
+                    ["queryStrategy"] = "UseIPv4",
+                    ["disableCache"] = false
+                };
+            }
 
             return config.ToJsonString(new JsonSerializerOptions
             {
@@ -74,10 +99,62 @@ namespace VpnClient
             return System.Text.RegularExpressions.Regex.IsMatch(d, @"^[a-zA-Z0-9\.\-\*]+$");
         }
 
+
+        // ── DIRECT OUTBOUND ──────────────────────────────────────────
+        /// <summary>
+        /// Строит outbound "direct" (freedom).
+        ///
+        /// В обычном режиме freedom просто отдаёт пакет ОС — этого достаточно.
+        ///
+        /// В TUN-режиме так делать НЕЛЬЗЯ: маршруты 0.0.0.0/1 и 128.0.0.0/1
+        /// уже указывают на TUN-адаптер, поэтому пакет вернётся обратно
+        /// в tun2socks → в xray → петля, и bypass-домены просто не открываются.
+        ///
+        /// Решение: sockopt.interface привязывает сокет к реальному
+        /// сетевому интерфейсу, минуя таблицу маршрутизации.
+        /// </summary>
+        private static JsonObject BuildDirectOutbound(SplitTunnelSettings? split)
+        {
+            var direct = new JsonObject
+            {
+                ["protocol"] = "freedom",
+                ["tag"] = "direct"
+            };
+
+            if (split?.TunMode == true && !string.IsNullOrWhiteSpace(split.PhysicalInterface))
+            {
+                direct["streamSettings"] = new JsonObject
+                {
+                    ["sockopt"] = new JsonObject
+                    {
+                        // Имя реального адаптера (Ethernet 2 / Wi-Fi).
+                        // Без этого bypass в TUN-режиме уходит в петлю.
+                        ["interface"] = split.PhysicalInterface
+                    }
+                };
+            }
+
+            return direct;
+        }
+
         // ── СТРОИМ ROUTING RULES ─────────────────────────────────────
         private static JsonArray BuildRoutingRules(SplitTunnelSettings? split)
         {
             var rules = new JsonArray();
+
+            // 0. ДОБАВЛЕНО: DNS через прокси (только в TUN-режиме).
+            //    Идёт ПЕРВЫМ правилом — DNS должен решаться до всего остального,
+            //    иначе резолв утечёт напрямую и DPI увидит запрашиваемые домены.
+            if (split?.TunMode == true)
+            {
+                rules.Add(new JsonObject
+                {
+                    ["type"] = "field",
+                    ["outboundTag"] = "proxy",
+                    ["port"] = 53,
+                    ["network"] = "udp"
+                });
+            }
 
             // 1. Bittorrent всегда напрямую (было раньше, оставляем)
             rules.Add(new JsonObject
@@ -100,7 +177,6 @@ namespace VpnClient
                 });
             }
 
-            // 3. Bypass домены — идут напрямую без VPN
             // 3. Bypass домены — идут напрямую без VPN
             var domains = split.BypassDomains
                 .SelectMany(d => d.Split('|', StringSplitOptions.RemoveEmptyEntries))  // разбиваем если вдруг пришли с |

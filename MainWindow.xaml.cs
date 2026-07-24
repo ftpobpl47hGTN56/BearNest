@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Markup;
@@ -36,6 +37,19 @@ namespace VpnClient
         private bool _isSwitching = false;
         private const string ProxyHost = "127.0.0.1";
         private const int ProxyPort = 19808;
+
+        // ── ДОБАВЛЕНО: TUN-режим ─────────────────────────────────────
+        private static readonly string Tun2SocksPath =
+            System.IO.Path.Combine(AppDir, "core", "tun2socks.exe");
+
+        private TunManager? _tun;
+
+        /// <summary>
+        /// Активен ли TUN-режим. Читается из чекбокса ChkTunMode.
+        /// В отличие от системного прокси, TUN заворачивает ВЕСЬ трафик,
+        /// включая UDP — это нужно для игр и P2P.
+        /// </summary>
+        private bool UseTunMode => ChkTunMode.IsChecked == true;
 
         public MainWindow()
         {
@@ -86,6 +100,14 @@ namespace VpnClient
             TxtBypassIPs.Text = _storage.GetBypassIPs();
             ChkBypassLan.IsChecked = _storage.GetBypassLan();
 
+            // ── ДОБАВЛЕНО: восстанавливаем состояние TUN-чекбокса ──
+            // Подписываемся на события ПОСЛЕ установки IsChecked,
+            // иначе при старте сработает обработчик и запишет в лог мусор.
+            ChkTunMode.IsChecked = _storage.Get("tun_mode") == "true";
+            ChkTunMode.Checked += ChkTunMode_Changed;
+            ChkTunMode.Unchecked += ChkTunMode_Changed;
+            UpdateTunAvailability();
+
             foreach (var name in ThemeManager.ThemeNames)
                 CmbTheme.Items.Add(name);
 
@@ -118,6 +140,100 @@ namespace VpnClient
             CmbLogFilter.Items.Add("🐛 Debug");
             CmbLogFilter.Items.Add("🐻 BearNest");
             CmbLogFilter.SelectedIndex = 0;
+        }
+
+        // ════════════════════════════════════════════════════════════
+        // ДОБАВЛЕНО: TUN-РЕЖИМ — UI-логика
+        // ════════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Проверяет наличие tun2socks.exe и wintun.dll.
+        /// Если файлов нет — чекбокс блокируется, чтобы пользователь
+        /// не включил режим, который заведомо не запустится.
+        /// </summary>
+        private void UpdateTunAvailability()
+        {
+            var wintunPath = System.IO.Path.Combine(AppDir, "core", "wintun.dll");
+            bool hasTun2Socks = System.IO.File.Exists(Tun2SocksPath);
+            bool hasWintun = System.IO.File.Exists(wintunPath);
+
+            if (hasTun2Socks && hasWintun)
+            {
+                ChkTunMode.IsEnabled = true;
+                ChkTunMode.ToolTip =
+                    "Весь трафик (включая UDP) идёт через VPN.\n" +
+                    "Нужно для игр, P2P и всего, что не читает системный прокси.\n" +
+                    "Требует запуска от администратора.";
+                return;
+            }
+
+            // Файлов не хватает — гасим чекбокс и объясняем чего именно
+            ChkTunMode.IsChecked = false;
+            ChkTunMode.IsEnabled = false;
+
+            var missing = new List<string>();
+            if (!hasTun2Socks) missing.Add("tun2socks.exe");
+            if (!hasWintun) missing.Add("wintun.dll");
+
+            ChkTunMode.ToolTip =
+                $"Недоступно: в папке core\\ не хватает {string.Join(" и ", missing)}";
+        }
+
+        /// <summary>Чекбокс TUN — сохраняем выбор и предупреждаем о необходимости переподключения.</summary>
+        private void ChkTunMode_Changed(object sender, RoutedEventArgs e)
+        {
+            _storage.Set("tun_mode", UseTunMode ? "true" : "false");
+
+            if (UseTunMode)
+                OnLog("[BearNest] 🌐 TUN-режим включён (применится при следующем подключении)");
+            else
+                OnLog("[BearNest] 🌐 TUN-режим выключен — будет использован системный прокси");
+
+            // Если VPN уже запущен — режим не переключается на лету
+            if (_core.IsRunning)
+                ShowToast("ℹ️", "Переподключись, чтобы применить смену режима");
+        }
+
+        /// <summary>
+        /// Поднимает TUN-туннель. Отдельный метод, чтобы переиспользовать
+        /// в ConnectAsync и при переключении сервера.
+        /// </summary>
+        private async Task StartTunAsync()
+        {
+            if (_selectedServer == null) return;
+
+            _tun = new TunManager(Tun2SocksPath);
+            _tun.LogReceived += OnLog;
+
+            try
+            {
+                await _tun.StartAsync(_selectedServer.Address, ProxyPort);
+                Dispatcher.Invoke(() => TunStatusText.Text = "🌐 TUN активен");
+            }
+            catch (Exception ex)
+            {
+                OnLog($"[BearNest] ❌ Не удалось поднять TUN: {ex.Message}");
+                ShowToast("❌", "TUN не запустился — включаю системный прокси");
+
+                // Откатываемся на системный прокси, чтобы юзер не остался без VPN вообще
+                _tun?.CleanupImmediate();
+                _tun = null;
+
+                SystemProxy.Enable(ProxyHost, ProxyPort);
+                Dispatcher.Invoke(() => TunStatusText.Text = "⚠️ TUN упал → прокси");
+            }
+        }
+
+        /// <summary>Гасит TUN-туннель, если он поднят.</summary>
+        private async Task StopTunAsync()
+        {
+            if (_tun == null) return;
+
+            await _tun.StopAsync();
+            _tun.LogReceived -= OnLog;
+            _tun = null;
+
+            Dispatcher.Invoke(() => TunStatusText.Text = "");
         }
 
         // ── ТАЙМЕР СЕССИИ ────────────────────────────────────────────
@@ -264,6 +380,9 @@ namespace VpnClient
         private async void BtnStart_Click(object sender, RoutedEventArgs e)
             => await ConnectAsync();
 
+        // ════════════════════════════════════════════════════════════
+        // ИЗМЕНЕНО: ConnectAsync — развилка TUN / системный прокси
+        // ════════════════════════════════════════════════════════════
         private async System.Threading.Tasks.Task ConnectAsync()
         {
             if (_selectedServer == null)
@@ -282,8 +401,17 @@ namespace VpnClient
             await _core.StartAsync();
 
             await System.Threading.Tasks.Task.Delay(800);
-            SystemProxy.Enable(ProxyHost, ProxyPort);
-            OnLog($"[BearNest] {LocalizationManager.Get("LogProxyOn")} {ProxyHost}:{ProxyPort}");
+
+            // ── РАЗВИЛКА: TUN или системный прокси ──
+            if (UseTunMode)
+            {
+                await StartTunAsync();
+            }
+            else
+            {
+                SystemProxy.Enable(ProxyHost, ProxyPort);
+                OnLog($"[BearNest] {LocalizationManager.Get("LogProxyOn")} {ProxyHost}:{ProxyPort}");
+            }
 
             _connectTime = DateTime.Now;
             _sessionTimer.Start();
@@ -294,6 +422,9 @@ namespace VpnClient
         private async void BtnStop_Click(object sender, RoutedEventArgs e)
             => await DisconnectAsync();
 
+        // ════════════════════════════════════════════════════════════
+        // ИЗМЕНЕНО: DisconnectAsync — гасим TUN перед остановкой xray
+        // ════════════════════════════════════════════════════════════
         private async System.Threading.Tasks.Task DisconnectAsync()
         {
             BtnStop.IsEnabled = false;
@@ -302,6 +433,12 @@ namespace VpnClient
             _sessionTimer.Stop();
             TimerText.Text = "";
             TrafficText.Text = "";
+            _connectTime = default;   // сессия завершена — сбрасываем точку отсчёта
+
+            // ВАЖНО: TUN гасим ПЕРВЫМ. Если сначала убить xray, то трафик
+            // будет уходить в мёртвый SOCKS-порт, и система на пару секунд
+            // останется вообще без интернета.
+            await StopTunAsync();
 
             SystemProxy.Disable();
             OnLog($"[BearNest] {LocalizationManager.Get("LogProxyOff")}");
@@ -364,6 +501,9 @@ namespace VpnClient
             _watchdogCts = null;
         }
 
+        // ════════════════════════════════════════════════════════════
+        // ИЗМЕНЕНО: SwitchToNextServerAsync — пересоздаём TUN при смене сервера
+        // ════════════════════════════════════════════════════════════
         private async System.Threading.Tasks.Task SwitchToNextServerAsync()
         {
             if (_servers.Count == 0) return;
@@ -376,7 +516,13 @@ namespace VpnClient
                 var ms = await ServerPinger.PingAsync(nextServer.Address, nextServer.Port);
                 if (ms < 0) continue;
 
-                Dispatcher.Invoke(async () =>
+                // Новый сервер = новый IP = нужен новый прямой маршрут.
+                // Поэтому TUN пересоздаём целиком.
+                bool tunWasActive = _tun != null;
+                if (tunWasActive)
+                    await StopTunAsync();
+
+                await Dispatcher.InvokeAsync(async () =>
                 {
                     _selectedServer = nextServer;
                     ServerList.SelectedIndex = nextIdx;
@@ -390,6 +536,12 @@ namespace VpnClient
                     System.IO.File.WriteAllText(ConfigPath, json);
                     await _core.StartAsync();
                 });
+
+                if (tunWasActive)
+                {
+                    await Task.Delay(800);
+                    await StartTunAsync();
+                }
                 return;
             }
             Dispatcher.Invoke(() => OnLog("[BearNest] ❌ Нет доступных серверов"));
@@ -489,9 +641,19 @@ namespace VpnClient
         /// <summary>
         /// Ctrl+C — копирует выделенные строки.
         /// Ctrl+A — выделяет все строки.
+        ///
+        /// ВАЖНО: теперь каждая строка лога — это read-only TextBox, который
+        /// сам умеет выделять и копировать ТЕКСТ. Если фокус внутри такого
+        /// TextBox — мы НЕ перехватываем Ctrl+C/Ctrl+A, иначе пользователь
+        /// не сможет скопировать выделенный фрагмент текста (баг туннелирования
+        /// PreviewKeyDown: он срабатывал на ListBox раньше, чем TextBox).
         /// </summary>
         private void LogBox_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
         {
+            // Фокус в строке-TextBox → отдаём управление ему (выделение/копирование текста)
+            if (e.OriginalSource is System.Windows.Controls.TextBox)
+                return;
+
             if (e.Key == System.Windows.Input.Key.C &&
                 System.Windows.Input.Keyboard.Modifiers == System.Windows.Input.ModifierKeys.Control)
             {
@@ -640,9 +802,20 @@ namespace VpnClient
                 ?? System.Windows.Media.Brushes.Gray;
         }
 
+        // ════════════════════════════════════════════════════════════
+        // ИЗМЕНЕНО: CleanupOnExit — обязательная очистка маршрутов
+        // ════════════════════════════════════════════════════════════
         public void CleanupOnExit()
         {
             StopWatchdog();
+
+            // КРИТИЧНО: маршруты снимаем ДО убийства xray и ПЕРВЫМ делом.
+            // Если приложение закроется с активными TUN-маршрутами,
+            // весь трафик системы будет уходить в несуществующий адаптер
+            // и интернет пропадёт до ручного "route delete".
+            _tun?.CleanupImmediate();
+            _tun = null;
+
             SystemProxy.Disable();
             _core.KillImmediate();
             _logger.Dispose();
@@ -664,6 +837,14 @@ namespace VpnClient
                     StatusText.Foreground = System.Windows.Media.Brushes.LightGreen;
                     BtnStart.IsEnabled = false;
                     BtnStop.IsEnabled = true;
+
+                    // Страховка: если таймер по какой-то причине встал
+                    // (мягкий рестарт затянулся), поднимаем его обратно.
+                    // _connectTime НЕ трогаем — сессия считается с момента
+                    // первого подключения, а не с рестарта ядра.
+                    if (_connectTime != default && !_sessionTimer.IsEnabled)
+                        _sessionTimer.Start();
+
                     _tray.ShowBalloon("BearNest", $"Подключён: {_selectedServer?.Name}");
                 }
                 else
@@ -671,15 +852,22 @@ namespace VpnClient
                     BtnSwitch.IsEnabled = false;
                     StatusText.Text = LocalizationManager.Get("StatusStopped");
                     StatusText.Foreground = new System.Windows.Media.SolidColorBrush(
-                        System.Windows.Media.Color.FromRgb(243, 139, 168));
+                    System.Windows.Media.Color.FromRgb(243, 139, 168));
                     BtnStart.IsEnabled = true;
                     BtnStop.IsEnabled = false;
-                    _sessionTimer.Stop();
-                    TimerText.Text = "";
-                    TrafficText.Text = "";
 
+                    // При мягком рестарте (Save rules / Switch Server) сессия
+                    // логически не прерывается — xray просто перезапускается.
+                    // Гасим таймер только при настоящем отключении, иначе
+                    // счётчик обнуляется и не возвращается, пока пользователь
+                    // не переподключится вручную.
                     if (!_isSwitching)
+                    {
+                        _sessionTimer.Stop();
+                        TimerText.Text = "";
+                        TrafficText.Text = "";
                         SystemProxy.Disable();
+                    }
 
                     OnLog($"[BearNest] {LocalizationManager.Get("LogStopped")}");
                 }
@@ -721,7 +909,8 @@ namespace VpnClient
                 sub_url = _storage.GetSubscriptionUrl(),
                 last_server = _storage.GetLastServer(),
                 auto_connect = _storage.GetAutoConnect(),
-                xray_path = TxtXrayPath.Text
+                xray_path = TxtXrayPath.Text,
+                tun_mode = UseTunMode           // ДОБАВЛЕНО: сохраняем режим в бэкап
             };
 
             var json = System.Text.Json.JsonSerializer.Serialize(data,
@@ -758,6 +947,14 @@ namespace VpnClient
                     _storage.SetLastServer(lastServer.GetString() ?? "");
                 if (root.TryGetProperty("xray_path", out var xrayPath))
                     TxtXrayPath.Text = xrayPath.GetString() ?? "";
+
+                // ДОБАВЛЕНО: восстанавливаем режим TUN из бэкапа
+                if (root.TryGetProperty("tun_mode", out var tunMode))
+                {
+                    bool enabled = tunMode.ValueKind == System.Text.Json.JsonValueKind.True;
+                    _storage.Set("tun_mode", enabled ? "true" : "false");
+                    ChkTunMode.IsChecked = enabled && ChkTunMode.IsEnabled;
+                }
 
                 OnLog($"[BearNest] Настройки импортированы: {dlg.FileName}");
                 System.Windows.MessageBox.Show("Настройки загружены! Перезапустите приложение.", "BearNest",
@@ -909,6 +1106,9 @@ namespace VpnClient
             BtnSwitch.Content = LocalizationManager.Get("BtnSwitch");
         }
 
+        // ════════════════════════════════════════════════════════════
+        // ИЗМЕНЕНО: SwitchToServerDirectAsync — пересоздание TUN
+        // ════════════════════════════════════════════════════════════
         private async System.Threading.Tasks.Task SwitchToServerDirectAsync(
             ServerConfig server, int idx)
         {
@@ -916,6 +1116,12 @@ namespace VpnClient
             OnLog($"[BearNest] ⇄ {LocalizationManager.Get("LogSwitchedTo")} {server.Name}");
 
             StopWatchdog();
+
+            // У нового сервера другой IP → старый прямой маршрут больше не годится.
+            // Гасим TUN до перезапуска xray, поднимем заново после.
+            bool tunWasActive = _tun != null;
+            if (tunWasActive)
+                await StopTunAsync();
 
             var splitSettings = BuildSplitTunnelSettings();
             var json = ConfigGenerator.Generate(server, splitSettings);
@@ -933,6 +1139,13 @@ namespace VpnClient
                 SelectedServerText.Text =
                     $"{server.Name} | {server.Protocol} | {server.Address}:{server.Port}";
             });
+
+            // Поднимаем TUN обратно уже с новым адресом сервера
+            if (tunWasActive)
+            {
+                await Task.Delay(500);
+                await StartTunAsync();
+            }
 
             _storage.SetLastServer(server.Name);
             StartWatchdog();
@@ -1022,6 +1235,32 @@ namespace VpnClient
             }
 
             AddDomainToBypass(text);
+        }
+
+        /// <summary>
+        /// Кнопка "➕ в обход" внутри строки лога (всплывает при наведении).
+        /// Достаёт домен из строки лога и добавляет его в список обхода.
+        ///
+        /// DataContext надёжнее Tag: при виртуализации (Recycling) контейнеры
+        /// пересоздаются и Tag может оказаться null, а DataContext всегда
+        /// указывает на актуальную строку лога.
+        /// </summary>
+        private void BtnAddLogToBypass_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement fe || fe.DataContext is not string line)
+                return;
+
+            var domain = LogDomainExtractor.Extract(line);
+            if (string.IsNullOrEmpty(domain))
+            {
+                ShowToast("⚠️", "Не нашёл домен в этой строке");
+                return;
+            }
+
+            // AddDomainToBypass сам показывает тосты (добавлен / уже есть) и пишет в лог.
+            // Домен попадает в TxtBypassDomains; чтобы применить к активному VPN —
+            // нажми "💾 Save rules" во вкладке 🔀 Bypass (мягкий рестарт xray).
+            AddDomainToBypass(domain);
         }
 
         /// <summary>
@@ -1126,8 +1365,32 @@ namespace VpnClient
             {
                 BypassDomains = domains,
                 BypassIPs = ips,
-                BypassLan = ChkBypassLan.IsChecked == true
+                BypassLan = ChkBypassLan.IsChecked == true,
+                TunMode = UseTunMode,
+                // Имя реального адаптера нужно, чтобы bypass в TUN-режиме
+                // шёл мимо туннеля, а не заворачивался обратно
+                PhysicalInterface = UseTunMode ? GetPhysicalInterfaceName() : ""
             };
+        }
+
+        /// <summary>
+        /// Находит имя активного физического сетевого адаптера,
+        /// исключая TUN и виртуальные. Используется для sockopt.interface
+        /// в outbound "direct" при TUN-режиме.
+        /// </summary>
+        private static string GetPhysicalInterfaceName()
+        {
+            var nic = System.Net.NetworkInformation.NetworkInterface
+                .GetAllNetworkInterfaces()
+                .FirstOrDefault(n =>
+                    n.OperationalStatus == System.Net.NetworkInformation.OperationalStatus.Up
+                    && n.NetworkInterfaceType != System.Net.NetworkInformation.NetworkInterfaceType.Loopback
+                    && !n.Name.Contains("BearNest", StringComparison.OrdinalIgnoreCase)
+                    && !n.Description.Contains("Wintun", StringComparison.OrdinalIgnoreCase)
+                    && !n.Description.Contains("TAP", StringComparison.OrdinalIgnoreCase)
+                    && n.GetIPProperties().GatewayAddresses.Any());
+
+            return nic?.Name ?? "";
         }
 
         /// <summary>Кнопка "💾 Save rules" в Bypass таб.</summary>
@@ -1176,6 +1439,10 @@ namespace VpnClient
                 _isSwitching = false;
                 StartWatchdog();
 
+                // TUN трогать НЕ надо: сервер тот же, маршруты те же,
+                // меняются только правила внутри xray. Мягкий рестарт
+                // ядра TUN-туннель не рвёт — tun2socks просто переподключит
+                // SOCKS-сессию к тому же порту 19808.
                 TxtSplitStatus.Text = $"✅ Применено: {domainCount} доменов, {ipCount} IP{lanStatus}";
                 ShowToast("✅", $"Split tunneling применён ({domainCount}д + {ipCount}IP)");
             }

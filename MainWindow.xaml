@@ -13,6 +13,37 @@
     <Window.Resources>
         <Style x:Key="WinBtn" TargetType="Button" BasedOn="{StaticResource BtnNormal}"/>
         <local:LogColorConverter x:Key="LogColorConverter"/>
+        <local:LogHasDomainConverter x:Key="LogHasDomainConverter"/>
+
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <!-- СТРОКА ЛОГА: read-only TextBox даёт нативное выделение       -->
+        <!-- текста мышью (TextBlock этого не умеет).                    -->
+        <!-- Кастомный Template убирает рамку/фон/скроллбары,            -->
+        <!-- чтобы визуально это выглядело как обычный текст.            -->
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <Style x:Key="LogLineTextBox" TargetType="TextBox">
+            <Setter Property="IsReadOnly"               Value="True"/>
+            <Setter Property="BorderThickness"          Value="0"/>
+            <Setter Property="Background"               Value="Transparent"/>
+            <Setter Property="Padding"                  Value="0"/>
+            <Setter Property="Margin"                   Value="0"/>
+            <Setter Property="FontFamily"               Value="Segoe UI Emoji, Consolas"/>
+            <Setter Property="FontSize"                 Value="{DynamicResource FontSizeSmall}"/>
+            <Setter Property="TextWrapping"             Value="NoWrap"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Cursor"                   Value="IBeam"/>
+            <Setter Property="SelectionBrush"           Value="{DynamicResource BrushAccent}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <ScrollViewer x:Name="PART_ContentHost"
+                                      Focusable="False"
+                                      HorizontalScrollBarVisibility="Hidden"
+                                      VerticalScrollBarVisibility="Hidden"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Window.Style>
@@ -194,42 +225,81 @@
                     </Button>
                 </Grid>
 
-                <!-- Кнопки управления -->
-                <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,0,0,10">
-                    <Button x:Name="BtnStart"
+                <!-- ══════════════════════════════════════════════════ -->
+                <!-- Кнопки управления                                  -->
+                <!-- ИЗМЕНЕНО: StackPanel → Grid, чтобы чекбокс TUN     -->
+                <!-- прижался к правому краю                            -->
+                <!-- ══════════════════════════════════════════════════ -->
+                <Grid Grid.Row="3" Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Кнопки (содержимое не изменилось) -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                        <Button x:Name="BtnStart"
                                 Click="BtnStart_Click"
                                 Width="150" Height="40"
                                 Style="{StaticResource BtnAccent}"
                                 Background="{DynamicResource BrushButtonConnect}"
                                 Margin="0,0,10,0">
-                        <emoji:TextBlock Text="{DynamicResource BtnConnect}"/>
-                    </Button>
-                    <Button x:Name="BtnSwitch"
+                            <emoji:TextBlock Text="{DynamicResource BtnConnect}"/>
+                        </Button>
+                        <Button x:Name="BtnSwitch"
                                 Click="BtnSwitch_Click"
                                 Width="140" Height="40"
                                 Style="{StaticResource BtnAccent}"
                                 Background="{DynamicResource BrushButtonLoad}"
                                 IsEnabled="False"
-                                Margin="10,0,0,0">
-                        <emoji:TextBlock Text="{DynamicResource BtnSwitch}"/>
-                    </Button>
-                    <Button x:Name="BtnStop"
-                                    Click="BtnStop_Click"
-                                    Width="150" Height="40"
-                                    Style="{StaticResource BtnAccent}"
-                                    Background="{DynamicResource BrushButtonStop}"
-                                    IsEnabled="False"
-                                    Margin="0,0,10,0">
-                        <emoji:TextBlock Text="{DynamicResource BtnDisconnect}"/>
-                    </Button>
-                    <Button x:Name="BtnPing"
+                                Margin="0,0,10,0">
+                            <emoji:TextBlock Text="{DynamicResource BtnSwitch}"/>
+                        </Button>
+                        <Button x:Name="BtnStop"
+                                Click="BtnStop_Click"
+                                Width="150" Height="40"
+                                Style="{StaticResource BtnAccent}"
+                                Background="{DynamicResource BrushButtonStop}"
+                                IsEnabled="False"
+                                Margin="0,0,10,0">
+                            <emoji:TextBlock Text="{DynamicResource BtnDisconnect}"/>
+                        </Button>
+                        <Button x:Name="BtnPing"
                                 Click="BtnPing_Click"
                                 Width="130" Height="40"
                                 Style="{StaticResource BtnAccent}"
                                 Background="{DynamicResource BrushButtonPing}">
-                        <emoji:TextBlock Text="{DynamicResource BtnPing}"/>
-                    </Button>
-                </StackPanel>
+                            <emoji:TextBlock Text="{DynamicResource BtnPing}"/>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- ДОБАВЛЕНО: переключатель TUN-режима -->
+                    <!--
+                        Обработчики Checked/Unchecked НЕ вешаются здесь в XAML.
+                        Они подписываются в конструкторе MainWindow ПОСЛЕ
+                        восстановления сохранённого состояния — иначе при
+                        старте сработает обработчик и запишет в лог мусор.
+                    -->
+                    <StackPanel Grid.Column="2"
+                                Orientation="Vertical"
+                                VerticalAlignment="Center"
+                                Margin="12,0,0,0">
+                        <CheckBox x:Name="ChkTunMode"
+                                  VerticalAlignment="Center"
+                                  FontSize="13">
+                            <emoji:TextBlock Text="🌐 TUN"
+                                             Foreground="{DynamicResource BrushText}"
+                                             FontWeight="Bold"/>
+                        </CheckBox>
+                        <TextBlock x:Name="TunStatusText"
+                                   Text=""
+                                   Foreground="{DynamicResource BrushConnected}"
+                                   FontSize="10"
+                                   Margin="0,2,0,0"
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
 
                 <!-- Выбранный сервер -->
                 <TextBlock x:Name="SelectedServerText"
@@ -294,9 +364,9 @@
 
                             <!--
                                 ИЗМЕНЕНИЯ:
-                                  • SelectionMode="Extended"  — мультивыделение строк (Shift/Ctrl+клик)
-                                  • PreviewKeyDown            — Ctrl+C копирует, Ctrl+A выделяет всё
-                                  • ContextMenu               — правая кнопка мыши: Копировать / Выделить всё
+                                  • Каждая строка теперь = read-only TextBox → можно ВЫДЕЛЯТЬ ТЕКСТ мышью
+                                  • При наведении на строку с доменом всплывает кнопка "➕ в обход"
+                                  • SelectionMode/Ctrl+C/контекстное меню оставлены как запасной способ
                             -->
                             <ListBox x:Name="LogBox"
                                      Grid.Row="0"
@@ -320,10 +390,44 @@
                                 </ListBox.ContextMenu>
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
-                                        <TextBlock Text="{Binding}"
-                                                   FontFamily="Segoe UI Emoji, Consolas"
-                                                   FontSize="{DynamicResource FontSizeSmall}"
-                                                   Foreground="{Binding Converter={StaticResource LogColorConverter}}"/>
+                                        <!-- Grid Background=Transparent → ховер ловится по всей строке -->
+                                        <Grid Background="Transparent">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Текст строки: read-only TextBox = выделяется мышью -->
+                                            <TextBox Grid.Column="0"
+                                                     Text="{Binding Mode=OneWay}"
+                                                     Style="{StaticResource LogLineTextBox}"
+                                                     Foreground="{Binding Converter={StaticResource LogColorConverter}}"/>
+
+                                            <!-- Кнопка "добавить в обход": видна при наведении И если в строке есть домен -->
+                                            <Button Grid.Column="1"
+                                                    Click="BtnAddLogToBypass_Click"
+                                                    VerticalAlignment="Center"
+                                                    Margin="6,0,2,0"
+                                                    Padding="0"
+                                                    Height="22"
+                                                    ToolTip="Добавить домен из этой строки в список обхода (Bypass)">
+                                                <emoji:TextBlock Text="➕ в обход" FontSize="11"/>
+                                                <Button.Style>
+                                                    <Style TargetType="Button" BasedOn="{StaticResource BtnNormal}">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <MultiDataTrigger>
+                                                                <MultiDataTrigger.Conditions>
+                                                                    <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True"/>
+                                                                    <Condition Binding="{Binding Converter={StaticResource LogHasDomainConverter}}" Value="True"/>
+                                                                </MultiDataTrigger.Conditions>
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </MultiDataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Button.Style>
+                                            </Button>
+                                        </Grid>
                                     </DataTemplate>
                                 </ListBox.ItemTemplate>
                             </ListBox>
@@ -508,6 +612,12 @@
                                 <TextBlock Text="Traffic on these domains/IP addresses will go directly, bypassing the VPN."
                                     Foreground="{DynamicResource BrushTextMuted}"
                                     FontSize="11"
+                                    Margin="0,0,0,4"/>
+                                <!-- ДОБАВЛЕНО: пояснение про TUN -->
+                                <TextBlock Text="Работает в обоих режимах — и через системный прокси, и через TUN."
+                                    Foreground="{DynamicResource BrushTextMuted}"
+                                    FontSize="10"
+                                    FontStyle="Italic"
                                     Margin="0,0,0,10"/>
 
                                 <!-- Быстрое добавление домена / URL -->
@@ -624,7 +734,7 @@
                 </TabControl>
                 <!-- Версия -->
                 <TextBlock Grid.Row="6"
-           Text="BearNest - gullampis810: v1.285.26"
+           Text="BearNest - gullampis810: v1.347.26"
            FontSize="10"
            HorizontalAlignment="Left"
            Margin="6,0,0,7"
